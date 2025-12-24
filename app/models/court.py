@@ -1,6 +1,6 @@
-from db.database import Base
+from core.database import Base
 from sqlalchemy import Column, Integer, String, ForeignKey
-
+from sqlalchemy.orm import relationship
 
 class Courts(Base):
     __tablename__ = "courts"
@@ -9,6 +9,13 @@ class Courts(Base):
     name = Column(String)
     sports_type = Column(String)
     description = Column(String)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+
     created_at = Column(String)
     updated_at = Column(String)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+
+    schedules = relationship(
+        "Schedules",
+        back_populates="court",
+        cascade="all, delete"
+    )

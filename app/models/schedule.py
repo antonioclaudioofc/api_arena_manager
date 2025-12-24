@@ -1,6 +1,6 @@
-from db.database import Base
+from core.database import Base
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-
+from sqlalchemy.orm import relationship
 
 class Schedules(Base):
     __tablename__ = "schedules"
@@ -10,7 +10,15 @@ class Schedules(Base):
     start_time = Column(String)
     end_time = Column(String)
     available = Column(Boolean)
-    created_at = Column(String)
-    updated_at = Column(String)
     court_id = Column(Integer, ForeignKey("courts.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
+    
+    created_at = Column(String)
+    updated_at = Column(String)
+
+    court = relationship("Courts", back_populates="schedules")
+    reservations = relationship(
+        "Reservations",
+        back_populates="schedule",
+        cascade="all, delete"
+    )
