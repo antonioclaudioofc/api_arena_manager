@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, Path, Query
+from schemas.auth import UserResponse
+from schemas.reservation import ReservationResponseAdmin
 from schemas.schedule import ScheduleCreate
 from dependencies import db_dependency
 from starlette import status
@@ -15,6 +17,22 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
+@router.get("/reservations", response_model=list[ReservationResponseAdmin], status_code=status.HTTP_200_OK)
+def list_reservations(
+    user: user_dependency,
+    db: db_dependency
+):
+    return AdminService.list_reservations(user, db)
+
+
+@router.get("/users", response_model=list[UserResponse], status_code=status.HTTP_200_OK)
+def list_users(
+    user: user_dependency,
+    db: db_dependency
+):
+    return AdminService.list_users(user, db)
+
+
 @router.post("/courts", status_code=status.HTTP_201_CREATED)
 def create_court(
     user: user_dependency,
@@ -28,10 +46,9 @@ def create_court(
 def create_schedule(
         user: user_dependency,
         schedule_request: ScheduleCreate,
-        db: db_dependency,
-        court_id: int = Query(gt=0)
+        db: db_dependency
 ):
-    AdminService.create_schedule(user, schedule_request, db, court_id)
+    AdminService.create_schedule(user, schedule_request, db)
 
 
 @router.delete("/courts/{court_id}", status_code=status.HTTP_204_NO_CONTENT)
