@@ -11,11 +11,19 @@ class Schedules(Base):
     start_time = Column(String)
     end_time = Column(String)
     available = Column(Boolean)
-    court_id = Column(Integer, ForeignKey("courts.id"))
-    owner_id = Column(Integer, ForeignKey("users.id"))
+
+    court_id = Column(
+        Integer,
+        ForeignKey("courts.id", ondelete="CASCADE")
+    )
 
     created_at = Column(String)
     updated_at = Column(String)
 
-    court = relationship("Courts", back_populates="schedules")
-    reservations = relationship("Reservations", back_populates="schedule")
+    court = relationship("courts", back_populates="schedules")
+
+    reservations = relationship(
+        "Reservations",
+        back_populates="schedule",
+        cascade="all, delete-orphan"
+    )

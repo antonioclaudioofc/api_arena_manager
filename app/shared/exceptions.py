@@ -1,21 +1,36 @@
 from fastapi import HTTPException, status
 
 
-class UnathorizedException(HTTPException):
-    def __init__(self, detail="Unathorized"):
-        super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
+class AppException(HTTPException):
+    def __init__(self, status_code: int, message: str):
+        super().__init__(status_code=status_code, detail=message)
 
 
-class ForbiddenException(HTTPException):
-    def __init__(self, detail="Forbidden"):
-        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+class UnathorizedException(AppException):
+    def __init__(self, message="Credencias inválidas"):
+        super().__init__(status.HTTP_401_UNAUTHORIZED, message)
 
 
-class NotFoundException(HTTPException):
-    def __init__(self, detail="Resource not found"):
-        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+class ForbiddenException(AppException):
+    def __init__(self, message="Acesso negado"):
+        super().__init__(status.HTTP_403_FORBIDDEN, message)
 
 
-class BadRequestException(HTTPException):
-    def __init__(self, detail="Bad request"):
-        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+class NotFoundException(AppException):
+    def __init__(self, message="Recurso não encontrado"):
+        super().__init__(status.HTTP_404_NOT_FOUND, message)
+
+
+class BadRequestException(AppException):
+    def __init__(self, message="Requisição inválida"):
+        super().__init__(status.HTTP_400_BAD_REQUEST, message)
+
+
+class EmailAlreadyExistsException(AppException):
+    def __init__(self):
+        super().__init__(status.HTTP_409_CONFLICT, "E-mail já cadastrado")
+
+
+class UsernameAlreadyExistsException(AppException):
+    def __init__(self):
+        super().__init__(status.HTTP_409_CONFLICT, "Username já cadastrado")

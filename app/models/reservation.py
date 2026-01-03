@@ -7,9 +7,17 @@ class Reservations(Base):
     __tablename__ = "reservations"
 
     id = Column(Integer, primary_key=True, index=True)
-    status = Column(String, default="Disponivel")
-    schedule_id = Column(Integer, ForeignKey("schedules.id"))
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String, default="Reservado")
+
+    schedule_id = Column(
+        Integer,
+        ForeignKey("schedules.id", ondelete="CASCADE")
+    )
+    
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE")
+    )
 
     created_at = Column(String)
     updated_at = Column(String)
