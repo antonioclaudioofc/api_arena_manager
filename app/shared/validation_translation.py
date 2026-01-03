@@ -1,22 +1,30 @@
 ERROR_TRANSLATIONS = {
-    "value_error.missing": "Campo obrigatório",
-    "type_error.integer": "Deve ser um número inteiro",
-    "type_error.float": "Deve ser um número",
-    "type_error.bool": "Deve ser verdadeiro ou falso",
-    "type_error.str": "Deve ser um texto",
+    "missing": "Campo obrigatório",
+
+    "string_type": "Deve ser um texto",
+    "int_parsing": "Deve ser um número inteiro",
+    "float_parsing": "Deve ser um número",
+    "bool_parsing": "Deve ser verdadeiro ou falso",
+
+    "string_too_short": "Texto muito curto",
+    "string_too_long": "Texto muito longo",
+
+    "greater_than": "Valor muito pequeno",
+    "less_than": "Valor muito grande",
+
+    "enum": "Use apenas: admin ou client",
+
     "value_error.email": "Email inválido",
-    "value_error.any_str.min_length": "Texto muito curto",
-    "value_error.any_str.max_length": "Texto muito longo",
-    "value_error.number.not_gt": "Valor muito pequeno",
-    "value_error.number.not_lt": "Valor muito grande",
 }
 
 
-def translate_error(error: dict):
+def translate_error(error: dict) -> str:
     error_type = error.get("type")
-    message = ERROR_TRANSLATIONS.get(error_type)
 
-    if message:
-        return message
+    if error_type in ERROR_TRANSLATIONS:
+        return ERROR_TRANSLATIONS[error_type]
+
+    if "enum" in str(error).lower():
+        return "Valor inválido. Use apenas valores permitidos"
 
     return "Valor inválido"

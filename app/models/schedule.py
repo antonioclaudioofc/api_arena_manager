@@ -20,7 +20,7 @@ class Schedules(Base):
     created_at = Column(String)
     updated_at = Column(String)
 
-    court = relationship("courts", back_populates="schedules")
+    court = relationship("Courts", back_populates="schedules")
 
     reservations = relationship(
         "Reservations",

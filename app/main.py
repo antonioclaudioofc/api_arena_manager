@@ -1,9 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import StatementError
 
 from app.core.database import engine, Base
-from app.core.exception_handlers import http_exception_handler, validation_exception_handler
+from app.core.exception_handlers import http_exception_handler, sql_exception_handler, validation_exception_handler
 from app.modules import auth, user, admin, court, schedule, reservation
 
 app = FastAPI(title="Arena Manager")
@@ -16,6 +17,11 @@ app.add_exception_handler(
 app.add_exception_handler(
     RequestValidationError,
     validation_exception_handler
+)
+
+app.add_exception_handler(
+    StatementError,
+    sql_exception_handler
 )
 
 origins = ["*"]

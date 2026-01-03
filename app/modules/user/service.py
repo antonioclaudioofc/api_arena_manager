@@ -1,34 +1,38 @@
 from datetime import datetime, timezone
 from app.modules.user.respository import UserRepository
-from app.shared.exceptions import NotFoundException, UnathorizedException
+from app.shared.exceptions import ForbiddenException, NotFoundException
 from app.core.security import bcrypt_context
 
 
 class UserService:
 
     @staticmethod
-    def get_profile(user: dict, db):
+    def get_profile(db, user_id: int):
+        user = UserRepository.get_by_id(db, user_id)
+
         if not user:
-            raise UnathorizedException()
-
-        user_model = UserRepository.get_by_id(user["id"], db)
-
-        if not user_model:
             raise NotFoundException("Usuário não encontrado")
 
-        return user_model
+        return user
 
     @staticmethod
-    def change_password(user: dict, data, db):
+    def change_password(db, user_id: int, data):
+        user = UserRepository.get_by_id(db, user_id)
+
         if not user:
-            raise UnathorizedException()
+            raise NotFoundException("Usuário não encontrado")
 
-        user_model = UserRepository.get_by_id(user["id"], db)
+        if not bcrypt_context.verify(data.password, user.hashed_password):
+            raise ForbiddenException("Senha atual incorreta")
 
-        if not bcrypt_context.verify(data.password, user_model.hashed_password):
-            raise UnathorizedException("Senha incorreta")
+        if data.password == data.new_password:
+            raise ForbiddenException(
+                "A nova senha deve ser diferente da atual")
 
-        user_model.hashed_password = bcrypt_context.hash(data.new_password)
-        user_model.updated_at = datetime.now(timezone.utc)
+        user.hashed_password = bcrypt_context.hash(data.new_password)
+        user.updated_at = datetime.now(timezone.utc)
 
         db.commit()
+        db.refresh(user)
+
+        return {"message": "Senha alterada com sucesso"}

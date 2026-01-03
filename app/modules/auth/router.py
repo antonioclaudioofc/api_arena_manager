@@ -6,6 +6,7 @@ from app.schemas.auth import AuthCreate
 from app.schemas.token import Token
 from starlette import status
 from app.modules.auth.service import AuthService
+from app.shared.schemas import ApiResponse
 
 router = APIRouter(
     prefix="/auth",
@@ -13,17 +14,26 @@ router = APIRouter(
 )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ApiResponse[None], status_code=status.HTTP_201_CREATED)
 def register(
-    db: db_dependency,
-    user_request: AuthCreate
-):
-    AuthService.register(user_request, db)
-
-
-@router.post("/token", response_model=Token)
-def login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    user_request: AuthCreate,
     db: db_dependency
 ):
-    return AuthService.login(form_data, db)
+    AuthService.register(db, user_request)
+
+    return {
+        "message": "Usuário criado com sucesso"
+    }
+
+
+@router.post("/token", response_model=ApiResponse[Token])
+def login(
+    db: db_dependency,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+):
+    token = AuthService.login(db, form_data)
+
+    return {
+        "message": "Login realizado com sucesso",
+        "data": token
+    }

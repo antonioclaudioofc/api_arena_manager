@@ -20,7 +20,7 @@ def get_user(
     user: user_dependency,
     db: db_dependency
 ):
-    return UserService.get_profile(user, db)
+    return UserService.get_profile(db, user["id"])
 
 
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
@@ -29,4 +29,4 @@ def change_password(
     user_verification: UserVerification,
     db: db_dependency
 ):
-    UserService.change_password(user, user_verification, db)
+    UserService.change_password(db, user["id"], user_verification)

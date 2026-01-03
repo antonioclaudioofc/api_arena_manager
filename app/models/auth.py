@@ -1,6 +1,8 @@
 from app.core.database import Base
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Enum, Integer, String
 from sqlalchemy.orm import relationship
+
+from app.shared.enums import UserRole
 
 
 class Users(Base):
@@ -12,7 +14,10 @@ class Users(Base):
     first_name = Column(String)
     last_name = Column(String)
     hashed_password = Column(String)
-    role = Column(String)
+    role = Column(
+        Enum(UserRole, name="user_role"),
+        default=UserRole.client
+    )
 
     created_at = Column(String)
     updated_at = Column(String)
