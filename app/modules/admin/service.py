@@ -3,7 +3,7 @@ from fastapi import Depends
 from app.modules.admin.repository import AdminRepository
 from app.modules.schedule.repository import ScheduleRepository
 from app.models.schedule import Schedules
-from app.modules.user.respository import UserRepository
+from app.shared.repositories.user_repository import UserRepository
 from app.modules.auth.dependencies import get_current_user
 from app.modules.court.repository import CourtRepository
 from app.models.court import Courts

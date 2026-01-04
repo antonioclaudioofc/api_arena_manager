@@ -1,14 +1,13 @@
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
-from app.modules.auth.repository import AuthRepository
 from app.modules.auth.secutiry import create_access_token, decode_token
+from app.shared.repositories.user_repository import UserRepository
 from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException, UsernameAlreadyExistsException
 from app.models.auth import Users
 from app.core.security import bcrypt_context, hash_password
 from datetime import datetime, timedelta, timezone
 
-from app.shared.normalizers import normalize_string
 from .secutiry import oauth2_bearer
 
 
@@ -16,10 +15,13 @@ class AuthService:
 
     @staticmethod
     def authenticate(db, username: str, password: str):
-        user = AuthRepository.get_by_username(db, username)
+        user = UserRepository.get_by_username(db, username)
 
-        if not user or not bcrypt_context.verify(password, user.hashed_password):
-            raise UnathorizedException("Usuário ou senha inválidos")
+        if not user:
+            raise UnathorizedException("Usuário inexistente")
+
+        if not bcrypt_context.verify(password, user.hashed_password):
+            raise UnathorizedException("Usuário ou senha inválida")
 
         return user
 
@@ -47,19 +49,20 @@ class AuthService:
 
     @staticmethod
     def register(db, data):
-        if AuthRepository.get_by_email(db, data.email):
+        if UserRepository.get_by_email(db, data.email):
             raise EmailAlreadyExistsException()
 
-        if AuthRepository.get_by_username(db, data.username):
+        if UserRepository.get_by_username(db, data.username):
             raise UsernameAlreadyExistsException()
 
         user_model = Users(
             **data.model_dump(exclude={"password"}),
             hashed_password=hash_password(data.password),
+            role="client",
             created_at=datetime.now(timezone.utc)
         )
 
-        AuthRepository.create(db, user_model)
+        UserRepository.create(db, user_model)
 
     @staticmethod
     def get_current_user(token: str = Depends(oauth2_bearer)):

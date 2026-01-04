@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
 from app.dependencies import db_dependency
-from app.schemas.auth import AuthCreate
+from app.modules.auth.service import AuthService
+from app.schemas.auth import RequestUser
 from app.schemas.token import Token
 from starlette import status
-from app.modules.auth.service import AuthService
-from app.shared.schemas import ApiResponse
+from app.shared.schemas import ApiResponse, MessageResponse
 
 router = APIRouter(
     prefix="/auth",
@@ -14,9 +14,9 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=ApiResponse[None], status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def register(
-    user_request: AuthCreate,
+    user_request: RequestUser,
     db: db_dependency
 ):
     AuthService.register(db, user_request)
@@ -26,14 +26,11 @@ def register(
     }
 
 
-@router.post("/token", response_model=ApiResponse[Token])
+@router.post("/token", response_model=Token)
 def login(
     db: db_dependency,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ):
     token = AuthService.login(db, form_data)
 
-    return {
-        "message": "Login realizado com sucesso",
-        "data": token
-    }
+    return token

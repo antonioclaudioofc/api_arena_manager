@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Path, Query
-from app.schemas.auth import UserResponse
+from app.schemas.auth import ResponseUser
 from app.schemas.reservation import ReservationResponseAdmin
 from app.schemas.schedule import ScheduleCreate
 from app.dependencies import db_dependency
@@ -25,7 +25,7 @@ def list_reservations(
     return AdminService.list_reservations(user, db)
 
 
-@router.get("/users", response_model=list[UserResponse], status_code=status.HTTP_200_OK)
+@router.get("/users", response_model=list[ResponseUser], status_code=status.HTTP_200_OK)
 def list_users(
     user: user_dependency,
     db: db_dependency

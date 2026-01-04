@@ -4,7 +4,7 @@ from jose import jwt
 from app.core.config import SECRET_KEY, ALGORITHM
 
 
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 def create_access_token(data: dict, expires_delta: timedelta):

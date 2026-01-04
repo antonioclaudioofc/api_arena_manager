@@ -9,3 +9,7 @@ T = TypeVar("T")
 class ApiResponse(BaseModel, Generic[T]):
     message: str
     data: Optional[T] = None
+
+
+class MessageResponse(BaseModel):
+    message: str

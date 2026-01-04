@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
-from app.dependencies import db_dependency
 from typing import Annotated
-from app.modules.auth.service import AuthService
 from starlette import status
-from app.schemas.auth import UserVerification
-from app.modules.user.service import UserService
 
+from app.dependencies import db_dependency
+from app.modules.auth.service import AuthService
+from app.modules.user.service import UserService
+from app.schemas.auth import UpdateUser, UserVerification
+from app.shared.schemas import ApiResponse, MessageResponse
 
 router = APIRouter(
     prefix="/user",
@@ -15,18 +16,52 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
-def get_user(
+@router.put("/me", response_model=MessageResponse)
+def update_profile(
+    db: db_dependency,
     user: user_dependency,
-    db: db_dependency
+    data: UpdateUser
 ):
-    return UserService.get_profile(db, user["id"])
+    user = UserService.update_profile(db, user["id"], data)
+
+    return {
+        "message": "Perfil atualizado com sucesso",
+    }
 
 
-@router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
+@router.get("/me", response_model=ApiResponse[UpdateUser])
+def get_user(
+    db: db_dependency,
+    user: user_dependency
+):
+    user_model = UserService.get_profile(db, user["id"])
+
+    return {
+        "message": "Perfil carregado com sucesso",
+        "data": user_model,
+    }
+
+
+@router.put("/change-password", response_model=MessageResponse)
 def change_password(
+    db: db_dependency,
     user: user_dependency,
-    user_verification: UserVerification,
-    db: db_dependency
+    user_verification: UserVerification
 ):
     UserService.change_password(db, user["id"], user_verification)
+
+    return {
+        "message": "Senha atualizado com sucesso"
+    }
+
+
+@router.delete("/account", response_model=MessageResponse)
+def delete_account(
+    db: db_dependency,
+    user: user_dependency
+):
+    UserService.delete_account(db, user["id"])
+
+    return {
+        "message": "Conta deletada com sucesso"
+    }

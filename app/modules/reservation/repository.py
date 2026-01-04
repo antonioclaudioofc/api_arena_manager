@@ -1,5 +1,3 @@
-from app.models.court import Courts
-from app.models.schedule import Schedules
 from app.models.reservation import Reservations
 
 
