@@ -5,7 +5,7 @@ from starlette import status
 from app.dependencies import db_dependency
 from app.modules.auth.service import AuthService
 from app.modules.user.service import UserService
-from app.schemas.auth import UpdateUser, UserVerification
+from app.schemas.auth import ResponseUser, UpdateUser, UserVerification
 from app.shared.schemas import ApiResponse, MessageResponse
 
 router = APIRouter(
@@ -29,17 +29,14 @@ def update_profile(
     }
 
 
-@router.get("/me", response_model=ApiResponse[UpdateUser])
+@router.get("/me", response_model=ResponseUser)
 def get_user(
     db: db_dependency,
     user: user_dependency
 ):
     user_model = UserService.get_profile(db, user["id"])
 
-    return {
-        "message": "Perfil carregado com sucesso",
-        "data": user_model,
-    }
+    return user_model
 
 
 @router.put("/change-password", response_model=MessageResponse)

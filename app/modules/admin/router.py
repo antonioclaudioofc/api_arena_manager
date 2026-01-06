@@ -6,8 +6,9 @@ from app.dependencies import db_dependency
 from starlette import status
 from typing import Annotated
 from app.modules.auth.service import AuthService
-from app.schemas.court import CourtCreate
+from app.schemas.court import RequestCourt, UpdateCourt
 from app.modules.admin.service import AdminService
+from app.shared.schemas import MessageResponse
 
 router = APIRouter(
     prefix="/admin",
@@ -33,13 +34,44 @@ def list_users(
     return AdminService.list_users(user, db)
 
 
-@router.post("/courts", status_code=status.HTTP_201_CREATED)
+@router.post("/courts", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def create_court(
+    db: db_dependency,
     user: user_dependency,
-    court_request: CourtCreate,
-    db: db_dependency
+    court_request: RequestCourt,
 ):
-    AdminService.create_court(user, court_request, db)
+    AdminService.create_court(db, user, court_request)
+
+    return {
+        "message": "Quadra criada com sucesso"
+    }
+
+
+@router.put("/courts/{court_id}", response_model=MessageResponse)
+def update_court(
+    db: db_dependency,
+    user: user_dependency,
+    data: UpdateCourt,
+    court_id: int
+):
+    AdminService.update_court(db, user, data, court_id)
+
+    return {
+        "message": "Quadra atualizada com sucesso"
+    }
+
+
+@router.delete("/courts/{court_id}", response_model=MessageResponse)
+def delete_court(
+    db: db_dependency,
+    user: user_dependency,
+    court_id: int = Path(gt=0)
+):
+    AdminService.delete_court(db, user, court_id)
+
+    return {
+        "message": "Quadra deletada com sucesso"
+    }
 
 
 @router.post("/schedules", status_code=status.HTTP_201_CREATED)
@@ -49,15 +81,6 @@ def create_schedule(
         db: db_dependency
 ):
     AdminService.create_schedule(user, schedule_request, db)
-
-
-@router.delete("/courts/{court_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_court(
-    user: user_dependency,
-    db: db_dependency,
-    court_id: int = Path(gt=0)
-):
-    AdminService.delete_court(user, db, court_id)
 
 
 @router.delete("/schedules/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)

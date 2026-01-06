@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Path
-from app.schemas.court import CourtResponse
+from app.schemas.court import ResponseCourt
 from app.dependencies import db_dependency
 from starlette import status
 from app.modules.court.service import CourtService
@@ -11,12 +11,12 @@ router = APIRouter(
 )
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=list[CourtResponse])
+@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponseCourt])
 def list_courts(db: db_dependency):
     return CourtService.list_all(db)
 
 
-@router.get("/{court_id}", status_code=status.HTTP_200_OK, response_model=CourtResponse)
+@router.get("/{court_id}", status_code=status.HTTP_200_OK, response_model=ResponseCourt)
 def get_court(
     db: db_dependency,
     court_id: int = Path(gt=0)

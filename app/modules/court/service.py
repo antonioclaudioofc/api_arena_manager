@@ -6,7 +6,7 @@ class CourtService:
 
     @staticmethod
     def list_all(db):
-        return CourtRepository.get_all(db)
+        return CourtRepository.list_all(db)
 
     @staticmethod
     def get_by_id(db, court_id: int):

@@ -6,7 +6,7 @@ from app.modules.auth.service import AuthService
 from app.schemas.auth import RequestUser
 from app.schemas.token import Token
 from starlette import status
-from app.shared.schemas import ApiResponse, MessageResponse
+from app.shared.schemas import MessageResponse
 
 router = APIRouter(
     prefix="/auth",

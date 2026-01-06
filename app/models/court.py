@@ -1,5 +1,5 @@
 from app.core.database import Base
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 
@@ -10,6 +10,8 @@ class Courts(Base):
     name = Column(String)
     sports_type = Column(String)
     description = Column(String)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    is_active = Column(Boolean, default=True)
 
     created_at = Column(String)
     updated_at = Column(String)
