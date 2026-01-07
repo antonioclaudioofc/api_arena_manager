@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Path, Query
+from app.schemas.admin import RequestScheduleBatch
 from app.schemas.auth import ResponseUser
 from app.schemas.reservation import ReservationResponseAdmin
-from app.schemas.schedule import ScheduleCreate
+from app.schemas.schedule import RequestSchedule, UpdateSchedule
 from app.dependencies import db_dependency
 from starlette import status
 from typing import Annotated
@@ -76,16 +77,51 @@ def delete_court(
 
 @router.post("/schedules", status_code=status.HTTP_201_CREATED)
 def create_schedule(
+        db: db_dependency,
         user: user_dependency,
-        schedule_request: ScheduleCreate,
-        db: db_dependency
+        schedule_request: RequestSchedule,
 ):
-    AdminService.create_schedule(user, schedule_request, db)
+    AdminService.create_schedule(db, user, schedule_request)
 
 
-@router.delete("/schedules/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_schedule(user: user_dependency, db: db_dependency, schedule_id: int = Path(gt=0)):
-    AdminService.delete_schedule(user, db, schedule_id)
+@router.post("/schedules/batch", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+def create_schedules(
+        db: db_dependency,
+        user: user_dependency,
+        data: RequestScheduleBatch,
+):
+    AdminService.create_schedules(db, user, data)
+
+    return {
+        "message": "Horários criados com sucesso"
+    }
+
+
+@router.put("/schedules/{schedule_id}", response_model=MessageResponse)
+def update_schedule(
+    db: db_dependency,
+    user: user_dependency,
+    data: UpdateSchedule,
+    schedule_id: int = Path(gt=0)
+):
+    AdminService.update_schedule(db, user, data, schedule_id)
+
+    return {
+        "message": "Horário atualizado com sucesso"
+    }
+
+
+@router.delete("/schedules/{schedule_id}", response_model=MessageResponse)
+def delete_schedule(
+    db: db_dependency,
+    user: user_dependency,
+    schedule_id: int = Path(gt=0)
+):
+    AdminService.delete_schedule(db, user, schedule_id)
+
+    return {
+        "message": "Horário deletado com sucesso"
+    }
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

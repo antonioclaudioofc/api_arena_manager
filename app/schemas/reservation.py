@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from app.schemas.auth import ResponseUser
-from app.schemas.schedule import ScheduleResponse
+from app.schemas.schedule import ResponseSchedule
 
 
 class ReservationCreate(BaseModel):
@@ -15,7 +15,7 @@ class ReservationCreate(BaseModel):
 class ReservationResponse(BaseModel):
     id: int
     status: str
-    schedule: ScheduleResponse
+    schedule: ResponseSchedule
     created_at: str
     updated_at: str | None
 
@@ -25,7 +25,7 @@ class ReservationResponse(BaseModel):
 class ReservationResponseAdmin(BaseModel):
     id: int
     status: str
-    schedule: ScheduleResponse
+    schedule: ResponseSchedule
     user: ResponseUser
     created_at: str
     updated_at: str | None

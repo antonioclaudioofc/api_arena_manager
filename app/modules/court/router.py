@@ -12,7 +12,9 @@ router = APIRouter(
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponseCourt])
-def list_courts(db: db_dependency):
+def list_courts(
+    db: db_dependency
+):
     return CourtService.list_all(db)
 
 

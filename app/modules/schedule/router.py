@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Path
-from app.schemas.schedule import ScheduleResponse
+from app.schemas.schedule import ResponseSchedule
 from app.modules.schedule.service import ScheduleService
 from app.dependencies import db_dependency
 from starlette import status
@@ -14,14 +14,14 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ScheduleResponse])
+@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponseSchedule])
 def list_schedules(
     db: db_dependency,
 ):
     return ScheduleService.list_all(db)
 
 
-@router.get("/{schedule_id}", status_code=status.HTTP_200_OK, response_model=ScheduleResponse)
+@router.get("/{schedule_id}", status_code=status.HTTP_200_OK, response_model=ResponseSchedule)
 def get_schedule(
         db: db_dependency,
         schedule_id: int = Path(gt=0)

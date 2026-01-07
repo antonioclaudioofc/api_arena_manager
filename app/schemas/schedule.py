@@ -1,8 +1,17 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict
 from app.schemas.court import ResponseCourt
 
 
-class ScheduleCreate(BaseModel):
+class BaseSchedule(BaseModel):
+    date: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    available: Optional[bool] = None
+    court_id: Optional[int] = None
+
+
+class RequestSchedule(BaseSchedule):
     date: str
     start_time: str
     end_time: str
@@ -10,7 +19,11 @@ class ScheduleCreate(BaseModel):
     court_id: int
 
 
-class ScheduleResponse(BaseModel):
+class UpdateSchedule(BaseSchedule):
+    pass
+
+
+class ResponseSchedule(BaseSchedule):
     id: int
     date: str
     start_time: str
