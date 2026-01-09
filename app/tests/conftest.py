@@ -47,3 +47,41 @@ def client(db):
 
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def create_user(client):
+    def _create_user(**overrides):
+        payload = {
+            "email": "user@example.com",
+            "username": "user",
+            "first_name": "Teste",
+            "last_name": "User",
+            "password": "123456"
+        }
+
+        payload.update(overrides)
+
+        response = client.post("/auth", json=payload)
+
+        assert response.status_code == 201
+
+        return payload
+
+    return _create_user
+
+
+@pytest.fixture
+def auth_headers(client, create_user):
+    user = create_user()
+
+    response = client.post("/auth/token", data={
+        "username": user["username"],
+        "password": "123456"
+    })
+
+    token = response.json()["access_token"]
+
+    return {
+        "Authorization": f"Bearer {token}"
+    }
