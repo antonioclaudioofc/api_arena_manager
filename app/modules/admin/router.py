@@ -75,13 +75,17 @@ def delete_court(
     }
 
 
-@router.post("/schedules", status_code=status.HTTP_201_CREATED)
+@router.post("/schedules", response_model=MessageResponse,  status_code=status.HTTP_201_CREATED)
 def create_schedule(
         db: db_dependency,
         user: user_dependency,
         schedule_request: RequestSchedule,
 ):
     AdminService.create_schedule(db, user, schedule_request)
+
+    return {
+        "message": "Horário criado com sucesso"
+    }
 
 
 @router.post("/schedules/batch", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
