@@ -9,7 +9,10 @@ def test_user_can_be_created(client):
         "role": "client"
     }
 
-    response = client.post("/auth", json=payload)
+    response = client.post(
+        "/auth",
+        json=payload
+    )
 
     assert response.status_code == 201
 
