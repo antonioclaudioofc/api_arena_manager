@@ -2,6 +2,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from app.modules.auth.secutiry import create_access_token, decode_token
+from app.shared.enums import UserRole
 from app.shared.repositories.user_repository import UserRepository
 from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException, UsernameAlreadyExistsException
 from app.models.auth import Users
@@ -58,7 +59,6 @@ class AuthService:
         user_model = Users(
             **data.model_dump(exclude={"password"}),
             hashed_password=hash_password(data.password),
-            role="client",
             created_at=datetime.now(timezone.utc)
         )
 

@@ -1,8 +1,7 @@
-def test_user_can_be_login(client, create_user):
-    user = create_user()
+def test_user_can_be_login(client, client_user):
 
     response = client.post("/auth/token", data={
-        "username": user["username"],
+        "username": client_user["username"],
         "password": "123456"
     })
 

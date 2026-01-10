@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from typing import Optional
+from app.shared.enums import UserRole
 from app.shared.normalizers import normalize_string
 
 
@@ -30,6 +31,7 @@ class RequestUser(BaseUser):
     first_name: str
     last_name: str
     password: str = Field(min_length=6)
+    role: UserRole
 
 
 class UpdateUser(BaseUser):

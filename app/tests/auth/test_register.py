@@ -5,7 +5,8 @@ def test_user_can_be_created(client):
         "username": "teste",
         "first_name": "Teste",
         "last_name": "User",
-        "password": "123456"
+        "password": "123456",
+        "role": "client"
     }
 
     response = client.post("/auth", json=payload)

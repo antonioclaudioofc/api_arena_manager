@@ -50,33 +50,58 @@ def client(db):
 
 
 @pytest.fixture
-def create_user(client):
-    def _create_user(**overrides):
-        payload = {
-            "email": "user@example.com",
-            "username": "user",
-            "first_name": "Teste",
-            "last_name": "User",
-            "password": "123456"
-        }
+def client_user(client):
+    payload = {
+        "email": "user@example.com",
+        "username": "user",
+        "first_name": "Teste",
+        "last_name": "User",
+        "password": "123456",
+        "role": "client"
+    }
 
-        payload.update(overrides)
+    client.post("/auth", json=payload)
 
-        response = client.post("/auth", json=payload)
-
-        assert response.status_code == 201
-
-        return payload
-
-    return _create_user
+    return payload
 
 
 @pytest.fixture
-def auth_headers(client, create_user):
-    user = create_user()
+def admin_user(client):
+
+    payload = {
+        "email": "admin@example.com",
+        "username": "admin",
+        "first_name": "Admin",
+        "last_name": "Master",
+        "password": "123456",
+        "role": "admin"
+    }
+
+    client.post("/auth", json=payload)
+
+    return payload
+
+
+@pytest.fixture
+def auth_headers(client, client_user):
 
     response = client.post("/auth/token", data={
-        "username": user["username"],
+        "username": client_user["username"],
+        "password": "123456"
+    })
+
+    token = response.json()["access_token"]
+
+    return {
+        "Authorization": f"Bearer {token}"
+    }
+
+
+@pytest.fixture
+def admin_headers(client, admin_user):
+
+    response = client.post("/auth/token", data={
+        "username": admin_user["username"],
         "password": "123456"
     })
 
