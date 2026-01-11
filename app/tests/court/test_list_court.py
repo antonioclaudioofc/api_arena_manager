@@ -1,4 +1,4 @@
-from app.tests.factories import court_factory
+from app.tests.factories.court_factory import court_factory
 
 
 def test_can_list_courts(client, db):
