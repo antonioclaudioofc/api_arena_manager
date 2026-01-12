@@ -23,3 +23,5 @@ def court_factory(
     db.add(court)
     db.commit()
     db.refresh(court)
+
+    return court

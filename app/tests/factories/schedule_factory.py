@@ -24,3 +24,5 @@ def schedule_factory(
     db.add(schedule)
     db.commit()
     db.refresh(schedule)
+
+    return schedule

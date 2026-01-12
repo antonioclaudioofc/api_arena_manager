@@ -3,7 +3,7 @@ from app.tests.factories.schedule_factory import schedule_factory
 
 
 def test_can_list_schedules(client, db):
-    court = court_factory(db)
+    court_factory(db)
 
     schedule_factory(
         db,
@@ -18,9 +18,9 @@ def test_can_list_schedules(client, db):
 
 
 def test_get_schedule_by_id(client, db):
-    court = court_factory(db)
+    court_factory(db)
 
-    schedule = schedule_factory(
+    schedule_factory(
         db,
         court_id=1,
         start_time="10:00",
