@@ -9,6 +9,19 @@ from app.shared.exceptions import NotFoundException, BadRequestException
 class ScheduleService:
 
     @staticmethod
+    def list_all(db):
+        return ScheduleRepository.list_all(db)
+
+    @staticmethod
+    def get_by_id(db, schedule_id: int):
+        schedule_model = ScheduleRepository.get_by_id(db, schedule_id)
+
+        if not schedule_model:
+            raise NotFoundException("Horário não encontrado")
+
+        return schedule_model
+
+    @staticmethod
     def create_batch(db, schedules):
 
         court = CourtRepository.get_by_id(db, schedules.court_id)
@@ -78,14 +91,53 @@ class ScheduleService:
         ScheduleRepository.bulk_create(db, schedules_to_create)
 
     @staticmethod
-    def list_all(db):
-        return ScheduleRepository.list_all(db)
+    def create(db, user: dict, schedule_request):
+
+        court = CourtRepository.get_by_id(db, schedule_request.court_id)
+
+        if not court:
+            raise NotFoundException("Quadra não encontrado")
+
+        schedule_model = Schedules(
+            **schedule_request.model_dump(),
+            owner_id=user["id"],
+            created_at=datetime.now(timezone.utc)
+        )
+
+        return ScheduleRepository.create(db, schedule_model)
 
     @staticmethod
-    def get_by_id(db, schedule_id: int):
-        schedule_model = ScheduleRepository.get_by_id(db, schedule_id)
+    def update(db, data, schedule_id: int):
 
+        schedule = ScheduleRepository.get_by_id(db, schedule_id)
+
+        if not schedule:
+            raise NotFoundException("Horário não encontrado")
+
+        if data.date is not None:
+            schedule.date = data.date
+
+        if data.start_time is not None:
+            schedule.start_time = data.start_time
+
+        if data.end_time is not None:
+            schedule.end_time = data.end_time
+
+        if data.available is not None:
+            schedule.available = data.available
+
+        if data.court_id is not None:
+            schedule.court_id = data.court_id
+
+        schedule.updated_at = datetime.now(timezone.utc)
+
+        ScheduleRepository.update(db, schedule)
+
+    @staticmethod
+    def delete(db, schedule_id: int):
+
+        schedule_model = ScheduleRepository.get_by_id(db, schedule_id)
         if not schedule_model:
             raise NotFoundException("Horário não encontrado")
 
-        return schedule_model
+        ScheduleRepository.delete(db, schedule_model)

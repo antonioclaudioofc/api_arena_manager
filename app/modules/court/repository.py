@@ -20,6 +20,11 @@ class CourtRepository:
         return court
 
     @staticmethod
+    def update(db, court):
+        db.commit()
+        db.refresh(court)
+
+    @staticmethod
     def delete(db, court):
         db.delete(court)
         db.commit()

@@ -15,7 +15,12 @@ from .secutiry import oauth2_bearer
 class AuthService:
 
     @staticmethod
-    def authenticate(db, username: str, password: str):
+    def authenticate(
+        db,
+        username: str,
+        password: str
+    ):
+
         user = UserRepository.get_by_username(db, username)
 
         if not user:
@@ -27,7 +32,11 @@ class AuthService:
         return user
 
     @staticmethod
-    def login(db, form_data: OAuth2PasswordRequestForm):
+    def login(
+        db,
+        form_data: OAuth2PasswordRequestForm
+    ):
+
         user = AuthService.authenticate(
             db,
             form_data.username,
@@ -49,7 +58,10 @@ class AuthService:
         }
 
     @staticmethod
-    def register(db, data):
+    def register(
+        db,
+        data
+    ):
         if UserRepository.get_by_email(db, data.email):
             raise EmailAlreadyExistsException()
 

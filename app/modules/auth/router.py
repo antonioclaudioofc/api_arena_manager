@@ -26,7 +26,7 @@ def register(
     }
 
 
-@router.post("/token", response_model=Token)
+@router.post("/login", response_model=Token)
 def login(
     db: db_dependency,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]

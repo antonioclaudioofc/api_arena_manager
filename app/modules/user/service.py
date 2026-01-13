@@ -11,7 +11,11 @@ from app.core.security import bcrypt_context
 class UserService:
 
     @staticmethod
-    def get_profile(db, user_id: int):
+    def get_profile(
+        db,
+        user_id: int
+    ):
+
         user = UserRepository.get_by_id(db, user_id)
 
         if not user:
@@ -20,7 +24,12 @@ class UserService:
         return user
 
     @staticmethod
-    def update_profile(db, user_id: int, data):
+    def update_profile(
+        db,
+        user_id: int,
+        data
+    ):
+
         user = UserRepository.get_by_id(db, user_id)
 
         if not user:
@@ -40,8 +49,7 @@ class UserService:
 
         user.updated_at = datetime.now(timezone.utc)
 
-        db.commit()
-        db.refresh(user)
+        UserRepository.update(db, user)
 
         return user
 
@@ -63,8 +71,7 @@ class UserService:
         user.hashed_password = bcrypt_context.hash(data.new_password)
         user.updated_at = datetime.now(timezone.utc)
 
-        db.commit()
-        db.refresh(user)
+        UserRepository.update(db, user)
 
     @staticmethod
     def delete_account(db, user_id: int):
@@ -73,5 +80,4 @@ class UserService:
         if not user:
             raise NotFoundException("Usuário não encontrado")
 
-        db.delete(user)
-        db.commit()
+        UserRepository.delete(db, user)

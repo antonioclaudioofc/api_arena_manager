@@ -85,7 +85,7 @@ def admin_user(client):
 @pytest.fixture
 def auth_headers(client, client_user):
 
-    response = client.post("/auth/token", data={
+    response = client.post("/auth/login", data={
         "username": client_user["username"],
         "password": "123456"
     })
@@ -100,7 +100,7 @@ def auth_headers(client, client_user):
 @pytest.fixture
 def admin_headers(client, admin_user):
 
-    response = client.post("/auth/token", data={
+    response = client.post("/auth/login", data={
         "username": admin_user["username"],
         "password": "123456"
     })

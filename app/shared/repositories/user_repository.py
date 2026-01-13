@@ -24,6 +24,11 @@ class UserRepository:
         return user
 
     @staticmethod
+    def update(db, user):
+        db.commit()
+        db.refresh(user)
+
+    @staticmethod
     def delete(db, user):
         db.delete(user)
         db.commit()

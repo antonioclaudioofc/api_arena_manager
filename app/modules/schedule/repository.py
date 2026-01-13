@@ -38,6 +38,11 @@ class ScheduleRepository:
         db.commit()
 
     @staticmethod
+    def update(db, schedule):
+        db.commit()
+        db.refresh(schedule)
+
+    @staticmethod
     def delete(db, schedule):
         db.delete(schedule)
         db.commit()
