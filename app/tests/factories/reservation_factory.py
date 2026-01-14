@@ -10,7 +10,7 @@ def reservation_factory(
     schedule_id: int,
 ):
     reservation = Reservations(
-        owner_id=user_id,
+        user_id=user_id,
         schedule_id=schedule_id,
         status="Ocupado",
         created_at=datetime.now(timezone.utc)

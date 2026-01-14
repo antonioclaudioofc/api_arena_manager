@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Path, Query
 from app.schemas.admin import RequestScheduleBatch
 from app.schemas.auth import ResponseUser
-from app.schemas.reservation import ReservationResponseAdmin
+from app.schemas.reservation import ResponseReservationAdmin
 from app.schemas.schedule import RequestSchedule, UpdateSchedule
 from app.dependencies import db_dependency
 from starlette import status
@@ -19,7 +19,7 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
-@router.get("/reservations", response_model=list[ReservationResponseAdmin], status_code=status.HTTP_200_OK)
+@router.get("/reservations", response_model=list[ResponseReservationAdmin], status_code=status.HTTP_200_OK)
 def list_reservations(
     user: user_dependency,
     db: db_dependency

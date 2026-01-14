@@ -1,33 +1,37 @@
-from pydantic import BaseModel, ConfigDict
 from app.schemas.auth import ResponseUser
+from pydantic import ConfigDict
 from app.schemas.schedule import ResponseSchedule
+from pydantic import BaseModel
+from typing import Optional
 
 
-class ReservationCreate(BaseModel):
-    status: str
+class BaseReservation(BaseModel):
+    schedule_id: Optional[int] = None
+
+
+class RequestReservation(BaseReservation):
     schedule_id: int
-    owner_id: int
-
-    created_at: str
-    updated_at: str | None
 
 
-class ReservationResponse(BaseModel):
-    id: int
+class UpdateReservation(BaseReservation):
+    pass
+
+
+class ResponseReservation(BaseReservation):
     status: str
     schedule: ResponseSchedule
     created_at: str
-    updated_at: str | None
+    updated_at: Optional[str]
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class ReservationResponseAdmin(BaseModel):
+class ResponseReservationAdmin(BaseModel):
     id: int
     status: str
     schedule: ResponseSchedule
     user: ResponseUser
     created_at: str
-    updated_at: str | None
+    updated_at: Optional[str]
 
     model_config = ConfigDict(from_attributes=True)

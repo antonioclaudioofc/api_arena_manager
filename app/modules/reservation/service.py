@@ -19,42 +19,42 @@ class ReservationService:
 
     @staticmethod
     def get(db, reservation_id: int):
-        reservation_model = ReservationRepository.get_by_id(
+        reservation = ReservationRepository.get_by_id(
             db,
             reservation_id
         )
 
-        if not reservation_model:
+        if not reservation:
             raise NotFoundException("Reserva não encontrada")
 
-        return reservation_model
+        return reservation
 
     @staticmethod
-    def create(user: dict, db, schedule_id: int):
+    def create(user: dict, db, reservation):
         if not user:
             raise UnathorizedException("Usuário não autenticado")
 
-        reservation_model = Reservations(
-            owner_id=user["id"],
-            schedule_id=schedule_id,
+        reservation = Reservations(
+            **reservation.model_dump(),
+            user_id=user["id"],
             status="Ocupado",
             created_at=datetime.now(timezone.utc)
         )
 
-        return ReservationRepository.create(reservation_model, db)
+        return ReservationRepository.create(reservation, db)
 
     @staticmethod
     def delete(user: dict, db, reservation_id: int):
         if not user:
             raise UnathorizedException("Usuário não autenticado")
 
-        reservation_model = ReservationRepository.get_by_owner(
+        reservation = ReservationRepository.get_by_owner(
             user["id"],
             db,
             reservation_id
         )
 
-        if not reservation_model:
+        if not reservation:
             raise NotFoundException("Reserva não encontrada")
 
-        ReservationRepository.delete(reservation_model, db)
+        ReservationRepository.delete(reservation, db)

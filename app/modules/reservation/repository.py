@@ -15,23 +15,23 @@ class ReservationRepository:
     def get_by_user(user_id: int, db):
         return (
             db.query(Reservations)
-            .filter(Reservations.owner_id == user_id)
+            .filter(Reservations.user_id == user_id)
             .all()
         )
 
     @staticmethod
-    def get_by_owner(owner_id: id, db, reservation_id: int):
-        return db.query(Reservations).filter(Reservations.id == reservation_id, Reservations.owner_id == owner_id).first()
+    def get_by_owner(user_id: id, db, reservation_id: int):
+        return db.query(Reservations).filter(Reservations.id == reservation_id, Reservations.user_id == user_id).first()
 
     @staticmethod
-    def create(reservation_request, db):
-        db.add(reservation_request)
+    def create(reservation, db):
+        db.add(reservation)
         db.commit()
-        db.refresh(reservation_request)
+        db.refresh(reservation)
 
-        return reservation_request
+        return reservation
 
     @staticmethod
-    def delete(reservation_request, db):
-        db.delete(reservation_request)
+    def delete(reservation, db):
+        db.delete(reservation)
         db.commit()
