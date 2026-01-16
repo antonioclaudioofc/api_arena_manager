@@ -5,7 +5,7 @@ from starlette import status
 from app.dependencies import db_dependency
 from app.modules.auth.service import AuthService
 from app.modules.user.service import UserService
-from app.schemas.auth import ResponseUser, UpdateUser, UserVerification
+from app.schemas.user import ResponseUser, UpdateUser, UserVerification
 from app.shared.schemas import ApiResponse, MessageResponse
 
 router = APIRouter(

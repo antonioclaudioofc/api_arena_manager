@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
 from app.dependencies import db_dependency
 from app.modules.auth.service import AuthService
-from app.schemas.auth import RequestUser
+from app.schemas.user import RequestUser
 from app.schemas.token import Token
 from starlette import status
 from app.shared.schemas import MessageResponse

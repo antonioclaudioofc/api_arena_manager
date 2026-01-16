@@ -1,28 +1,27 @@
-from app.schemas.auth import ResponseUser
+import datetime
+from app.schemas.user import ResponseUser
 from pydantic import ConfigDict
 from app.schemas.schedule import ResponseSchedule
 from pydantic import BaseModel
 from typing import Optional
 
-
-class BaseReservation(BaseModel):
-    schedule_id: Optional[int] = None
+from app.shared.enums import ReservationStatus
 
 
-class RequestReservation(BaseReservation):
+class RequestReservation(BaseModel):
     schedule_id: int
 
 
-class UpdateReservation(BaseReservation):
-    pass
+class UpdateReservation(BaseModel):
+    status: ReservationStatus
 
 
-class ResponseReservation(BaseReservation):
+class ResponseReservation(BaseModel):
     id: int
-    status: str
-    schedule: ResponseSchedule
-    created_at: str
-    updated_at: Optional[str]
+    schedule_id: int
+    client_id: int
+    status: ReservationStatus
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
