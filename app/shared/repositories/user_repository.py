@@ -1,34 +1,31 @@
-from app.models.user import Users
+from app.models.user import User
 
 
 class UserRepository:
 
-    @staticmethod
-    def get_by_id(db, user_id: int):
-        return db.query(Users).filter(Users.id == user_id).first()
+    def __init__(self, db):
+        self.db = db
 
-    @staticmethod
-    def get_by_username(db, username: str):
-        return db.query(Users).filter(Users.username == username).first()
-
-    @staticmethod
-    def get_by_email(db, email: str):
-        return db.query(Users).filter(Users.email == email).first()
-
-    @staticmethod
-    def create(db, user):
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    def create(self, user):
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
 
         return user
 
-    @staticmethod
-    def update(db, user):
-        db.commit()
-        db.refresh(user)
+    def get_by_id(self, user_id):
+        return self.db.query(User).filter(User.id == user_id).first()
 
-    @staticmethod
-    def delete(db, user):
-        db.delete(user)
-        db.commit()
+    def get_by_username(self, username):
+        return self.db.query(User).filter(User.username == username).first()
+
+    def get_by_email(self, email):
+        return self.db.query(User).filter(User.email == email).first()
+
+    def update(self, user):
+        self.db.commit()
+        self.db.refresh(user)
+
+    def delete(self, user):
+        self.db.delete(user)
+        self.db.commit()

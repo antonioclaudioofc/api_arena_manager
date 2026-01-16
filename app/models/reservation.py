@@ -22,10 +22,10 @@ class Reservation(Base):
     updated_at = Column(DateTime)
 
     schedule = relationship(
-        "Schedules",
+        "Schedule",
         back_populates="reservations"
     )
     client = relationship(
-        "Users",
+        "User",
         back_populates="reservations"
     )

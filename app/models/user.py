@@ -1,4 +1,3 @@
-from pydantic import EmailStr
 from app.core.database import Base
 from sqlalchemy import Column, DateTime, Enum, Integer, String
 from sqlalchemy.orm import relationship
@@ -12,7 +11,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     username = Column(String, unique=True)
-    email = Column(EmailStr, unique=True)
+    email = Column(String, unique=True)
     hashed_password = Column(String)
     role = Column(
         Enum(UserRole, name="user_role"),

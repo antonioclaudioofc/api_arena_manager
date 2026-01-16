@@ -27,7 +27,6 @@ class RequestUser(BaseUser):
     username: str
     name: str
     password: str = Field(min_length=6)
-    role: UserRole
 
 
 class UpdateUser(BaseUser):

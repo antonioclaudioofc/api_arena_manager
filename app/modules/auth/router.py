@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
 from app.dependencies import db_dependency
+from app.modules.auth.dependencies import get_auth_service, get_current_user
 from app.modules.auth.service import AuthService
 from app.schemas.user import RequestUser
 from app.schemas.token import Token
@@ -14,12 +15,12 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def register(
     user_request: RequestUser,
-    db: db_dependency
+    auth_service: AuthService = Depends(get_auth_service)
 ):
-    AuthService.register(db, user_request)
+    auth_service.register(user_request)
 
     return {
         "message": "Usuário criado com sucesso"
@@ -28,9 +29,19 @@ def register(
 
 @router.post("/login", response_model=Token)
 def login(
-    db: db_dependency,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    auth_service: AuthService = Depends(get_auth_service)
 ):
-    token = AuthService.login(db, form_data)
+    return auth_service.login(form_data)
 
-    return token
+
+@router.put("/promote-to-owner", response_model=MessageResponse)
+def promote_to_owner(
+    auth_service: AuthService = Depends(get_auth_service),
+    user=Depends(get_current_user),
+):
+    auth_service.promote_to_owner(user)
+
+    return {
+        "message": "Usuário promovido a Dono"
+    }
