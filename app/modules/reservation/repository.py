@@ -20,6 +20,17 @@ class ReservationRepository:
         )
 
     @staticmethod
+    def exists_active_by_schedule(db, schedule_id: int):
+        return (
+            db.query(Reservations)
+            .filter(
+                Reservations.schedule_id == schedule_id,
+                Reservations.status == "Ocupado"
+            )
+            .first()
+        )
+
+    @staticmethod
     def get_by_owner(user_id: id, db, reservation_id: int):
         return db.query(Reservations).filter(Reservations.id == reservation_id, Reservations.user_id == user_id).first()
 

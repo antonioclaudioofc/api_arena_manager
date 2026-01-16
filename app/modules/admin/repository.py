@@ -1,5 +1,5 @@
 from sqlalchemy.orm import selectinload
-from app.models.auth import Users
+from app.models.user import Users
 from app.models.reservation import Reservations
 from app.models.schedule import Schedules
 

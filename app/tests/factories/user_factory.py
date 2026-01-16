@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from app.core.security import hash_password
-from app.models.auth import Users
+from app.models.user import Users
 
 
 def user_factory(

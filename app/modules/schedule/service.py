@@ -10,7 +10,20 @@ class ScheduleService:
 
     @staticmethod
     def list_all(db):
-        return ScheduleRepository.list_all(db)
+        rows = ScheduleRepository.list_with_status(db)
+
+        result = []
+        for schedule, reservation_id in rows:
+            result.append({
+                "id": schedule.id,
+                "date": schedule.date,
+                "start_time": schedule.start_time,
+                "end_time": schedule.end_time,
+                "court_id": schedule.court_id,
+                "is_available": reservation_id is None
+            })
+
+        return result
 
     @staticmethod
     def get_by_id(db, schedule_id: int):
@@ -79,7 +92,6 @@ class ScheduleService:
                         date=current_date.isoformat(),
                         start_time=current_time.strftime("%H:%M"),
                         end_time=next_time.strftime("%H:%M"),
-                        available=True,
                         created_at=datetime.now(timezone.utc),
                     )
                 )
@@ -122,9 +134,6 @@ class ScheduleService:
 
         if data.end_time is not None:
             schedule.end_time = data.end_time
-
-        if data.available is not None:
-            schedule.available = data.available
 
         if data.court_id is not None:
             schedule.court_id = data.court_id

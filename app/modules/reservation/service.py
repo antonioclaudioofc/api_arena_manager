@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from app.models.reservation import Reservations
 from app.modules.reservation.repository import ReservationRepository
-from app.shared.exceptions import NotFoundException, UnathorizedException
+from app.modules.schedule.repository import ScheduleRepository
+from app.shared.exceptions import BadRequestException, NotFoundException, UnathorizedException
 
 
 class ReservationService:
@@ -33,6 +34,18 @@ class ReservationService:
     def create(user: dict, db, reservation):
         if not user:
             raise UnathorizedException("Usuário não autenticado")
+
+        schedule = ScheduleRepository.get_by_id(db, reservation.schedule_id)
+
+        if not schedule:
+            raise NotFoundException("Horário não encontrado")
+
+        active_reservation = ReservationRepository.exists_active_by_schedule(
+            db, reservation.schedule_id
+        )
+
+        if active_reservation:
+            raise BadRequestException("Horário já está ocupado")
 
         reservation = Reservations(
             **reservation.model_dump(),

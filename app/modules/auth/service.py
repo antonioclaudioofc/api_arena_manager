@@ -5,7 +5,7 @@ from app.modules.auth.secutiry import create_access_token, decode_token
 from app.shared.enums import UserRole
 from app.shared.repositories.user_repository import UserRepository
 from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException, UsernameAlreadyExistsException
-from app.models.auth import Users
+from app.models.user import Users
 from app.core.security import bcrypt_context, hash_password
 from datetime import datetime, timedelta, timezone
 

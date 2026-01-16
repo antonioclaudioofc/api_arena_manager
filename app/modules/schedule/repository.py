@@ -1,3 +1,5 @@
+from sqlalchemy import and_
+from app.models.reservation import Reservations
 from app.models.schedule import Schedules
 
 
@@ -16,8 +18,21 @@ class ScheduleRepository:
         return db.query(Schedules).filter(Schedules.id == schedule_id).first()
 
     @staticmethod
-    def list_all(db):
-        return db.query(Schedules).all()
+    def list_with_status(db):
+        return (
+            db.query(
+                Schedules,
+                Reservations.id.label("reservation_id")
+            )
+            .outerjoin(
+                Reservations,
+                and_(
+                    Reservations.schedule_id == Schedules.id,
+                    Reservations.status == "Ocupado"
+                )
+            )
+            .all()
+        )
 
     @staticmethod
     def exists(db, court_id: int, date: str, start_time: str, end_time: str):

@@ -14,7 +14,7 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponseSchedule])
+@router.get("/")
 def list_schedules(
     db: db_dependency,
 ):

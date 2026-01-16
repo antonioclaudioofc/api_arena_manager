@@ -18,6 +18,7 @@ class UpdateReservation(BaseReservation):
 
 
 class ResponseReservation(BaseReservation):
+    id: int
     status: str
     schedule: ResponseSchedule
     created_at: str

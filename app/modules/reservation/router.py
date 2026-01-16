@@ -24,14 +24,14 @@ def my_reservations(
     return ReservationService.list_my_reservations(user, db)
 
 
-@router.get("/", response_model=list[ResponseReservation], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=list[ResponseReservation])
 def list_reservations(
     db: db_dependency
 ):
     return ReservationService.list_all(db)
 
 
-@router.get("/{reservation_id}", response_model=ResponseReservation, status_code=status.HTTP_200_OK)
+@router.get("/{reservation_id}", response_model=ResponseReservation)
 def get_reservation(
     db: db_dependency,
     reservation_id: int = Path(gt=0)

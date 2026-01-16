@@ -44,9 +44,10 @@ class UserVerification(BaseModel):
 
 
 class ResponseUser(BaseModel):
-    email: str
+    email: EmailStr
     username: str
     first_name: str
     last_name: str
+    role: UserRole
 
     model_config = ConfigDict(from_attributes=True)
