@@ -1,65 +1,41 @@
 from datetime import datetime, timezone
+from app.shared.enums import UserRole
 from app.shared.repositories.user_repository import UserRepository
 from app.shared.exceptions import (
     EmailAlreadyExistsException,
     ForbiddenException,
-    NotFoundException
+    UsernameAlreadyExistsException
 )
 from app.core.security import bcrypt_context
 
 
 class UserService:
 
-    @staticmethod
-    def get_profile(
-        db,
-        user_id: int
-    ):
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
 
-        user = UserRepository.get_by_id(db, user_id)
-
-        if not user:
-            raise NotFoundException("Usuário não encontrado")
-
+    def get_profile(self, user):
         return user
 
-    @staticmethod
-    def update_profile(
-        db,
-        user_id: int,
-        data
-    ):
-
-        user = UserRepository.get_by_id(db, user_id)
-
-        if not user:
-            raise NotFoundException("Usuário não encontrado")
-
+    def update(self, user, data):
         if data.email and data.email != user.email:
-            if UserRepository.get_by_email(db, data.email):
+            if self.user_repo.get_by_email(data.email):
                 raise EmailAlreadyExistsException()
-
             user.email = data.email
 
-        if data.first_name:
-            user.first_name = data.first_name
+        if data.username and data.username != user.username:
+            if self.user_repo.get_by_username(data.username):
+                raise UsernameAlreadyExistsException()
+            user.username = data.username
 
-        if data.last_name:
-            user.last_name = data.last_name
+        if data.name:
+            user.name = data.name
 
         user.updated_at = datetime.now(timezone.utc)
 
-        UserRepository.update(db, user)
+        self.user_repo.update(user)
 
-        return user
-
-    @staticmethod
-    def change_password(db, user_id: int, data):
-        user = UserRepository.get_by_id(db, user_id)
-
-        if not user:
-            raise NotFoundException("Usuário não encontrado")
-
+    def change_password(self, user, data):
         if not bcrypt_context.verify(data.password, user.hashed_password):
             raise ForbiddenException("Senha atual incorreta")
 
@@ -71,13 +47,16 @@ class UserService:
         user.hashed_password = bcrypt_context.hash(data.new_password)
         user.updated_at = datetime.now(timezone.utc)
 
-        UserRepository.update(db, user)
+        self.user_repo.update(user)
 
-    @staticmethod
-    def delete_account(db, user_id: int):
-        user = UserRepository.get_by_id(db, user_id)
+    def delete(self, user):
+        self.user_repo.delete(user)
 
-        if not user:
-            raise NotFoundException("Usuário não encontrado")
+    def promote_to_owner(self, user):
+        if user.role == UserRole.client:
+            user.role = UserRole.owner
+            user.updated_at = datetime.now(timezone.utc)
 
-        UserRepository.delete(db, user)
+            self.user_repo.update(user)
+
+        return user

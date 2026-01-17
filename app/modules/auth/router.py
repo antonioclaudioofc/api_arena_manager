@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
-from app.dependencies import db_dependency
-from app.modules.auth.dependencies import get_auth_service, get_current_user
+from app.modules.auth.dependencies import get_auth_service
 from app.modules.auth.service import AuthService
 from app.schemas.user import RequestUser
 from app.schemas.token import Token
@@ -33,15 +32,3 @@ def login(
     auth_service: AuthService = Depends(get_auth_service)
 ):
     return auth_service.login(form_data)
-
-
-@router.put("/promote-to-owner", response_model=MessageResponse)
-def promote_to_owner(
-    auth_service: AuthService = Depends(get_auth_service),
-    user=Depends(get_current_user),
-):
-    auth_service.promote_to_owner(user)
-
-    return {
-        "message": "Usuário promovido a Dono"
-    }

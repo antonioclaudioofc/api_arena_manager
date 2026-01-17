@@ -2,6 +2,7 @@ from typing import Annotated
 
 from jose import JWTError
 from app.modules.auth.service import AuthService
+from app.modules.user.service import UserService
 from app.shared.exceptions import UnathorizedException
 from app.shared.repositories.user_repository import UserRepository
 from .secutiry import decode_token, oauth2_bearer
@@ -15,6 +16,10 @@ def get_user_repository(db: db_dependency):
 
 def get_auth_service(user_repo: UserRepository = Depends(get_user_repository)):
     return AuthService(user_repo)
+
+
+def get_user_service(user_repo: UserRepository = Depends(get_user_repository)):
+    return UserService(user_repo)
 
 
 def get_current_user(

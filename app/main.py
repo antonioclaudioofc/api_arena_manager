@@ -6,6 +6,7 @@ from sqlalchemy.exc import StatementError
 from app.core.database import engine, Base
 from app.core.exception_handlers import http_exception_handler, sql_exception_handler, validation_exception_handler
 from app.modules.auth.router import router as auth_router
+from app.modules.user.router import router as user_router
 
 
 app = FastAPI(title="Arena Manager")
@@ -38,3 +39,4 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(user_router)

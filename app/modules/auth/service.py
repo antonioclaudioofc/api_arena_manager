@@ -72,12 +72,3 @@ class AuthService:
         )
 
         return self.user_repo.create(user_model)
-
-    def promote_to_owner(self, user):
-        if user.role == UserRole.owner:
-            return user
-
-        user.role = UserRole.owner
-        user.updated_at = datetime.now(timezone.utc)
-
-        self.user_repo.update(user)
