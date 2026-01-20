@@ -24,9 +24,9 @@ class ArenaService:
         self.arena_repo.create(arena)
 
     def list_my_arenas(self, user):
-        if user.role != UserRole.owner:
-            raise ForbiddenException("Sem premissão")
-        
+        if not self.arena_repo.exists_by_owner(user.id):
+            raise ForbiddenException("Usuário não possui arenas")
+
         return self.arena_repo.get_by_owner(user.id)
 
     def update(self, user, data, arena_id):
@@ -42,7 +42,7 @@ class ArenaService:
             arena.name = data.name
 
         if data.city:
-            arena.city = data.name
+            arena.city = data.city
 
         if data.address:
             arena.address = data.address

@@ -20,6 +20,14 @@ class ArenaRepository:
             .first()
         )
 
+    def exists_by_owner(self, owner_id):
+        return (
+            self.db.query(Arena)
+            .filter(Arena.owner_id == owner_id)
+            .first()
+            is not None
+        )
+
     def get_by_owner(self, owner_id):
         return (
             self.db.query(Arena)

@@ -5,6 +5,7 @@ from app.modules.arena.service import ArenaService
 from app.modules.auth.dependencies import get_current_user
 from app.schemas.arena import RequestArena, ResponseArena, UpdateArena
 from app.shared.schemas import MessageResponse
+from starlette import status
 
 
 router = APIRouter(
@@ -21,7 +22,7 @@ def list(
     return arena_service.list_my_arenas(user)
 
 
-@router.post("/", response_model=MessageResponse)
+@router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def create(
     data: RequestArena,
     user=Depends(get_current_user),

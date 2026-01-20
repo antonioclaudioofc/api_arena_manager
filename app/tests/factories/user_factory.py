@@ -5,7 +5,11 @@ from app.models.user import User
 from app.shared.enums import UserRole
 
 
-def user_factory(db, role=UserRole.client, password="123456"):
+def user_factory(
+    db,
+    role=UserRole.client,
+    password="123456"
+):
     unique = uuid.uuid4().hex[:8]
 
     user = User(
