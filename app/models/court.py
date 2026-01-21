@@ -9,7 +9,7 @@ class Court(Base):
     id = Column(Integer, primary_key=True, index=True)
     arena_id = Column(Integer, ForeignKey("arenas.id", ondelete="CASCADE"))
     name = Column(String)
-    sport_type = Column(String)
+    sports_type = Column(String)
     price_per_hour = Column(Numeric)
     description = Column(String)
     created_at = Column(DateTime)

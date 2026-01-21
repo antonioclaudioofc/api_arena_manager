@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Path
-from app.schemas.court import ResponseCourt
-from app.dependencies import db_dependency
+from fastapi import APIRouter, Depends
+from app.modules.auth.dependencies import get_current_user
+from app.modules.court.dependencies import get_court_service
+from app.schemas.court import RequestCourt, ResponseCourt, UpdateCourt
 from starlette import status
-from app.modules.court.service import CourtService
+from app.shared.schemas import MessageResponse
 
 
 router = APIRouter(
@@ -11,16 +12,50 @@ router = APIRouter(
 )
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponseCourt])
-def list_courts(
-    db: db_dependency
+@router.get("/", response_model=list[ResponseCourt])
+def list_by_arena(
+    arena_id: int,
+    user=Depends(get_current_user),
+    court_service = Depends(get_court_service),
 ):
-    return CourtService.list_all(db)
+    return court_service.list_by_arena(user, arena_id)
 
 
-@router.get("/{court_id}", status_code=status.HTTP_200_OK, response_model=ResponseCourt)
-def get_court(
-    db: db_dependency,
-    court_id: int = Path(gt=0)
+@router.post("/{arena_id}", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+def create(
+    data: RequestCourt,
+    user=Depends(get_current_user),
+    court_service = Depends(get_court_service)
 ):
-    return CourtService.get_by_id(db, court_id)
+    court_service.create(user, data)
+
+    return {
+        "message": "Quadra criada com sucesso"
+    }
+
+
+@router.put("/{court_id}", response_model=MessageResponse)
+def update(
+    court_id: int,
+    data: UpdateCourt,
+    user=Depends(get_current_user),
+    court_service = Depends(get_court_service)
+):
+    court_service.update(user, data, court_id)
+
+    return {
+        "message": "Quadra atualizada com sucesso"
+    }
+
+
+@router.delete("/{court_id}", response_model=MessageResponse)
+def delete(
+    court_id: int,
+    user=Depends(get_current_user),
+    court_service = Depends(get_court_service)
+):
+    court_service.delete(user, court_id)
+
+    return {
+        "message": "Quadra deletada com sucesso"
+    }

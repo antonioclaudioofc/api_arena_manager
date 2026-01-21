@@ -8,6 +8,7 @@ from app.core.exception_handlers import http_exception_handler, sql_exception_ha
 from app.modules.auth.router import router as auth_router
 from app.modules.user.router import router as user_router
 from app.modules.arena.router import router as arena_router
+from app.modules.court.router import router as court_router
 
 
 app = FastAPI(title="Arena Manager")
@@ -42,3 +43,4 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(arena_router)
+app.include_router(court_router)

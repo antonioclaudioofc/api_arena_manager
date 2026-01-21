@@ -1,8 +1,6 @@
-from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.modules.auth.secutiry import create_access_token
 from app.shared.enums import UserRole
-from app.shared.repositories.user_repository import UserRepository
 from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException, UsernameAlreadyExistsException
 from app.models.user import User
 from app.core.security import bcrypt_context, hash_password
@@ -11,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 class AuthService:
 
-    def __init__(self, user_repo: UserRepository):
+    def __init__(self, user_repo):
         self.user_repo = user_repo
 
     def authenticate(

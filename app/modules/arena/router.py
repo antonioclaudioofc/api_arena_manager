@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 
 from app.modules.arena.dependencies import get_arena_service
-from app.modules.arena.service import ArenaService
 from app.modules.auth.dependencies import get_current_user
 from app.schemas.arena import RequestArena, ResponseArena, UpdateArena
 from app.shared.schemas import MessageResponse
@@ -17,7 +16,7 @@ router = APIRouter(
 @router.get("/", response_model=list[ResponseArena])
 def list(
     user=Depends(get_current_user),
-    arena_service: ArenaService = Depends(get_arena_service)
+    arena_service=Depends(get_arena_service)
 ):
     return arena_service.list_my_arenas(user)
 
@@ -26,7 +25,7 @@ def list(
 def create(
     data: RequestArena,
     user=Depends(get_current_user),
-    arena_service: ArenaService = Depends(get_arena_service)
+    arena_service=Depends(get_arena_service)
 ):
     arena_service.create(user, data)
 
@@ -40,7 +39,7 @@ def update(
     arena_id: int,
     data: UpdateArena,
     user=Depends(get_current_user),
-    arena_service: ArenaService = Depends(get_arena_service),
+    arena_service=Depends(get_arena_service),
 ):
     arena_service.update(user, data, arena_id)
 
@@ -53,7 +52,7 @@ def update(
 def delete(
     arena_id: int,
     user=Depends(get_current_user),
-    arena_service: ArenaService = Depends(get_arena_service)
+    arena_service=Depends(get_arena_service)
 ):
     arena_service.delete(user, arena_id)
 
