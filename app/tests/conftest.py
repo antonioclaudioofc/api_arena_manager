@@ -8,6 +8,7 @@ from app.modules.auth.dependencies import get_user_repository
 from app.shared.repositories.user_repository import UserRepository
 from app.main import app
 from app.core.database import Base
+from app.core.database import get_db
 
 engine = create_engine(
     DATABASE_TEST_URL,
@@ -23,21 +24,23 @@ TestingSessionLocal = sessionmaker(
 )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def db():
     Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
-    yield session
-    session.close()
-    Base.metadata.drop_all(bind=engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def client(db):
-    def override_get_user_repository():
-        return UserRepository(db)
+    def override_get_db():
+        yield db
 
-    app.dependency_overrides[get_user_repository] = override_get_user_repository
+    app.dependency_overrides[get_db] = override_get_db
 
     with TestClient(app) as c:
         yield c

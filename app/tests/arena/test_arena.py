@@ -3,7 +3,7 @@ from app.tests.factories.user_factory import user_factory
 from app.tests.utils.auth import auth_headers, login
 
 
-def test_create_arena_promotes_user_to_owner(client, db):
+def test_create_arena_promotes_user_to_owner(db, client):
     user = user_factory(db)
 
     token = login(client, user.username, "123456")
@@ -36,11 +36,11 @@ def test_create_arena_unauthorized(client):
 
 
 def test_owner_list_own_arenas(db, client):
-    user = user_factory(db, role="owner")
-    token = login(client, user.username, "123456")
+    user = user_factory(db)
+    token = login(client, user.username)
 
-    arena_factory(db=db, owner_id=user.id)
-    arena_factory(db=db, owner_id=user.id)
+    arena_factory(db, user.id)
+    arena_factory(db, user.id)
 
     response = client.get(
         "/arenas",
@@ -48,4 +48,4 @@ def test_owner_list_own_arenas(db, client):
     )
 
     assert response.status_code == 200
-    # assert len(response.json()) == 2
+    assert len(response.json()) == 2

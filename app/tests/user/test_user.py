@@ -2,10 +2,10 @@ from app.tests.factories.user_factory import user_factory
 from app.tests.utils.auth import auth_headers, login
 
 
-def test_get_profile(client, db):
+def test_get_profile(db, client):
     user = user_factory(db)
 
-    token = login(client, user.username, "123456")
+    token = login(client, user.username)
 
     response = client.get(
         "/user/me",
@@ -22,10 +22,10 @@ def test_get_profile_unauthorized(client):
     assert response.status_code == 401
 
 
-def test_update_profile(client, db):
+def test_update_profile(db, client):
     user = user_factory(db)
 
-    token = login(client, user.username, "123456")
+    token = login(client, user.username)
 
     response = client.put(
         "/user/me",
@@ -39,10 +39,10 @@ def test_update_profile(client, db):
     assert response.json()["message"] == "Perfil atualizado com sucesso"
 
 
-def test_change_password_wrong_password(client, db):
+def test_change_password_wrong_password(db, client):
     user = user_factory(db)
 
-    token = login(client, user.username, "123456")
+    token = login(client, user.username)
 
     response = client.put(
         "user/change-password",

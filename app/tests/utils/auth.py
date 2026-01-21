@@ -1,4 +1,4 @@
-def login(client, username, password):
+def login(client, username, password="123456"):
     response = client.post(
         "/auth/login",
         data={
