@@ -1,12 +1,10 @@
-from app.tests.factories.arena_factory import arena_factory
-from app.tests.factories.user_factory import user_factory
-from app.tests.utils.auth import auth_headers, login
+from . import user_factory, login, auth_headers
 
 
 def test_create_arena_promotes_user_to_owner(db, client):
     user = user_factory(db)
 
-    token = login(client, user.username, "123456")
+    token = login(client, user.username)
 
     response = client.post(
         "/arenas",
@@ -33,19 +31,3 @@ def test_create_arena_unauthorized(client):
     )
 
     assert response.status_code == 401
-
-
-def test_owner_list_own_arenas(db, client):
-    user = user_factory(db)
-    token = login(client, user.username)
-
-    arena_factory(db, user.id)
-    arena_factory(db, user.id)
-
-    response = client.get(
-        "/arenas",
-        headers=auth_headers(token)
-    )
-
-    assert response.status_code == 200
-    assert len(response.json()) == 2

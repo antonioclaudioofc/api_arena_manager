@@ -28,8 +28,9 @@ class UpdateCourt(BaseCourt):
 
 class ResponseCourt(BaseModel):
     id: int
-    arena_id: int
     name: str
+    arena_id: int
     sports_type: str
+    price_per_hour: float
 
     model_config = ConfigDict(from_attributes=True)

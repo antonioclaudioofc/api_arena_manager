@@ -12,20 +12,20 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[ResponseCourt])
+@router.get("/{arena_id}", response_model=list[ResponseCourt])
 def list_by_arena(
     arena_id: int,
     user=Depends(get_current_user),
-    court_service = Depends(get_court_service),
+    court_service=Depends(get_court_service),
 ):
     return court_service.list_by_arena(user, arena_id)
 
 
-@router.post("/{arena_id}", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def create(
     data: RequestCourt,
     user=Depends(get_current_user),
-    court_service = Depends(get_court_service)
+    court_service=Depends(get_court_service)
 ):
     court_service.create(user, data)
 
@@ -39,7 +39,7 @@ def update(
     court_id: int,
     data: UpdateCourt,
     user=Depends(get_current_user),
-    court_service = Depends(get_court_service)
+    court_service=Depends(get_court_service)
 ):
     court_service.update(user, data, court_id)
 
@@ -52,7 +52,7 @@ def update(
 def delete(
     court_id: int,
     user=Depends(get_current_user),
-    court_service = Depends(get_court_service)
+    court_service=Depends(get_court_service)
 ):
     court_service.delete(user, court_id)
 

@@ -47,7 +47,7 @@ class CourtService:
         if not arena:
             raise NotFoundException("Arena não encontrada")
 
-        if user.role != UserRole.owner or arena.owner_id != user.id:
+        if arena.owner_id != user.id:
             raise ForbiddenException("Sem premisão para editar esta quadra")
 
         if data.name:
@@ -74,7 +74,7 @@ class CourtService:
         if not arena:
             raise NotFoundException("Arena não encontrada")
 
-        if user.role != UserRole.owner or arena.owner_id != user.id:
+        if arena.owner_id != user.id:
             raise ForbiddenException("Sem premisão para remover esta quadra")
 
         self.court_repo.delete(court)
