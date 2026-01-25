@@ -23,6 +23,9 @@ class ArenaService:
 
         self.arena_repo.create(arena)
 
+    def get_by_id(self, arena_id):
+        return self.arena_repo.get_by_id(arena_id)
+
     def list_my_arenas(self, user):
         if not self.arena_repo.exists_by_owner(user.id):
             raise ForbiddenException("Usuário não possui arenas")
@@ -62,8 +65,5 @@ class ArenaService:
 
         self.arena_repo.delete(arena)
 
-    def list_all(self, user):
-        if user.role != UserRole.admin:
-            raise ForbiddenException("Acesso restrito ao admin")
-
+    def list_all(self):
         return self.arena_repo.list_all()

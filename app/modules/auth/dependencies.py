@@ -14,17 +14,17 @@ def get_user_repository(db: db_dependency):
     return UserRepository(db)
 
 
-def get_auth_service(user_repo: UserRepository = Depends(get_user_repository)):
+def get_auth_service(user_repo=Depends(get_user_repository)):
     return AuthService(user_repo)
 
 
-def get_user_service(user_repo: UserRepository = Depends(get_user_repository)):
+def get_user_service(user_repo=Depends(get_user_repository)):
     return UserService(user_repo)
 
 
 def get_current_user(
     token: Annotated[str, Depends(oauth2_bearer)],
-    user_repo: UserRepository = Depends(get_user_repository)
+    user_repo=Depends(get_user_repository)
 ):
     try:
         payload = decode_token(token)

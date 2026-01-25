@@ -14,8 +14,8 @@ class AuthService:
 
     def authenticate(
         self,
-        username: str,
-        password: str
+        username,
+        password
     ):
 
         user = self.user_repo.get_by_username(username)

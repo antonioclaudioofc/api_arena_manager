@@ -1,63 +1,71 @@
-from sqlalchemy import and_
-from app.models.reservation import Reservations
-from app.models.schedule import Schedules
+from app.models.reservation import Reservation
+from app.models.schedule import Schedule
+from sqlalchemy.orm import aliased
 
 
 class ScheduleRepository:
 
-    @staticmethod
-    def create(db, schedule):
-        db.add(schedule)
-        db.commit()
-        db.refresh(schedule)
+    def __init__(self, db):
+        self.db = db
+
+    def create(self, schedule):
+        self.db.add(schedule)
+        self.db.commit()
+        self.db.refresh(schedule)
 
         return schedule
 
-    @staticmethod
-    def get_by_id(db, schedule_id):
-        return db.query(Schedules).filter(Schedules.id == schedule_id).first()
+    def bulk_create(self, schedules):
+        self.db.add_all(schedules)
+        self.db.commit()
 
-    @staticmethod
-    def list_with_status(db):
+    def get_by_id(self, schedule_id):
         return (
-            db.query(
-                Schedules,
-                Reservations.id.label("reservation_id")
-            )
-            .outerjoin(
-                Reservations,
-                and_(
-                    Reservations.schedule_id == Schedules.id,
-                    Reservations.status == "Ocupado"
-                )
-            )
+            self.db.query(Schedule)
+            .filter(Schedule.id == schedule_id)
+            .first()
+        )
+
+    def list_by_court(self, court_id):
+        return (
+            self.db.query(Schedule)
+            .filter(Schedule.id == court_id)
             .all()
         )
 
-    @staticmethod
-    def exists(db, court_id: int, date: str, start_time: str, end_time: str):
+    def exists(self, court_id, date, start_time, end_time):
         return (
-            db.query(Schedules)
+            self.db.query(Schedule)
             .filter(
-                Schedules.court_id == court_id,
-                Schedules.date == date,
-                Schedules.start_time == start_time,
-                Schedules.end_time == end_time
-            ).first()
+                Schedule.court_id == court_id,
+                Schedule.date == date,
+                Schedule.start_time == start_time,
+                Schedule.end_time == end_time
+            )
+            .first()
             is not None
         )
 
-    @staticmethod
-    def bulk_create(db, schedules: list[Schedules]):
-        db.add_all(schedules)
-        db.commit()
+    def list_with_availability(self, court_id):
+        reservation_alisas = aliased(Reservation)
 
-    @staticmethod
-    def update(db, schedule):
-        db.commit()
-        db.refresh(schedule)
+        return (
+            self.db.query(Schedule, reservation_alisas.id)
+            .outerjoin(
+                reservation_alisas,
+                (reservation_alisas.schedule_id == Schedule.id)
+                & (reservation_alisas.status == "active")
+            )
+            .filter(Schedule.court_id == court_id)
+            .all()
+        )
 
-    @staticmethod
-    def delete(db, schedule):
-        db.delete(schedule)
-        db.commit()
+    def update(self, schedule):
+        self.db.commit()
+        self.db.refresh(schedule)
+
+        return schedule
+
+    def delete(self, schedule):
+        self.db.delete(schedule)
+        self.db.commit()

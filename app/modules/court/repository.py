@@ -13,7 +13,7 @@ class CourtRepository:
 
         return court
 
-    def get_by_arena(self, arena_id):
+    def list_all(self, arena_id):
         return (
             self.db.query(Court)
             .filter(Court.arena_id == arena_id)
@@ -37,5 +37,3 @@ class CourtRepository:
         self.db.delete(court)
         self.db.commit()
 
-    def list_all(self):
-        return self.db.query(Court).all()

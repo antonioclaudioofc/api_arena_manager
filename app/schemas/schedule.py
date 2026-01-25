@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 
@@ -31,3 +31,13 @@ class ResponseSchedule(BaseSchedule):
 
 class ResponseScheduleWithAvailability(ResponseSchedule):
     available: bool
+
+class RequestScheduleBatch(BaseModel):
+    court_id: int
+    start_date: str
+    end_date: str
+    start_time: str
+    end_time: str
+    interval_minutes: int
+    weekdays: List[int]
+    months: List[int]

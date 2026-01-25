@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from app.shared.enums import UserRole
-from app.shared.repositories.user_repository import UserRepository
 from app.shared.exceptions import (
     EmailAlreadyExistsException,
     ForbiddenException,
@@ -11,7 +10,7 @@ from app.core.security import bcrypt_context
 
 class UserService:
 
-    def __init__(self, user_repo: UserRepository):
+    def __init__(self, user_repo):
         self.user_repo = user_repo
 
     def get_profile(self, user):

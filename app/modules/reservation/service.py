@@ -1,73 +1,72 @@
-from datetime import datetime, timezone
-from app.models.reservation import Reservations
-from app.modules.reservation.repository import ReservationRepository
-from app.modules.schedule.repository import ScheduleRepository
-from app.shared.exceptions import BadRequestException, NotFoundException, UnathorizedException
+from datetime import datetime, timezone, date
+from app.models.reservation import Reservation
+from app.shared.enums import ReservationStatus, UserRole
+from app.shared.exceptions import BadRequestException, ForbiddenException, NotFoundException
 
 
 class ReservationService:
 
-    @staticmethod
-    def list_my_reservations(user: dict, db):
-        if not user:
-            raise UnathorizedException("Usuário não autenticado")
+    def __init__(
+        self,
+        reservation_repo,
+        schedule_service,
+    ):
+        self.reservation_repo = reservation_repo
+        self.schedule_service = schedule_service
 
-        return ReservationRepository.get_by_user(user["id"], db)
+    def create(self, user, data):
+        if user.role != UserRole.client:
+            raise ForbiddenException("Apenas clientes podem fazer reservas")
 
-    @staticmethod
-    def list_all(db):
-        return ReservationRepository.get_all(db)
-
-    @staticmethod
-    def get(db, reservation_id: int):
-        reservation = ReservationRepository.get_by_id(
-            db,
-            reservation_id
-        )
-
-        if not reservation:
-            raise NotFoundException("Reserva não encontrada")
-
-        return reservation
-
-    @staticmethod
-    def create(user: dict, db, reservation):
-        if not user:
-            raise UnathorizedException("Usuário não autenticado")
-
-        schedule = ScheduleRepository.get_by_id(db, reservation.schedule_id)
+        schedule = self.schedule_service.get_by_id(data.schedule_id)
 
         if not schedule:
             raise NotFoundException("Horário não encontrado")
 
-        active_reservation = ReservationRepository.exists_active_by_schedule(
-            db, reservation.schedule_id
+        schedule_date = date.fromisoformat(schedule.date)
+        today = date.today()
+
+        if schedule_date < today:
+            raise BadRequestException(
+                "Não é possível reservar horários passados"
+            )
+
+        active_reservation = self.reservation_repo.get_active_by_schedule(
+            data.schedule_id
         )
 
         if active_reservation:
-            raise BadRequestException("Horário já está ocupado")
+            raise BadRequestException("Horário já está reservado")
 
-        reservation = Reservations(
-            **reservation.model_dump(),
-            user_id=user["id"],
-            status="Ocupado",
-            created_at=datetime.now(timezone.utc)
+        reservation = Reservation(
+            schedule_id=data.schedule_id,
+            client_id=user.id,
+            status=ReservationStatus.active,
+            created_at=datetime.now(timezone.utc),
         )
 
-        return ReservationRepository.create(reservation, db)
+        return self.reservation_repo.create(reservation)
 
-    @staticmethod
-    def delete(user: dict, db, reservation_id: int):
-        if not user:
-            raise UnathorizedException("Usuário não autenticado")
+    def list_all(self):
+        return self.reservation_repo.list_all()
 
-        reservation = ReservationRepository.get_by_owner(
-            user["id"],
-            db,
-            reservation_id
-        )
+    def list_my_reservations(self, user):
+        return self.reservation_repo.list_by_client(user.id)
+
+    def cancel(self, user, reservation_id: int):
+        reservation = self.reservation_repo.get_by_id(reservation_id)
 
         if not reservation:
             raise NotFoundException("Reserva não encontrada")
 
-        ReservationRepository.delete(reservation, db)
+        if (reservation.client_id != user.id):
+            raise ForbiddenException("Sem permissão")
+
+        if reservation.status == ReservationStatus.cancelled:
+            raise BadRequestException("Reserva já cancelada")
+
+        reservation.status = ReservationStatus.cancelled
+        reservation.cancelled_at = datetime.now(timezone.utc)
+        reservation.updated_at = datetime.now(timezone.utc)
+
+        return self.reservation_repo.update(reservation)

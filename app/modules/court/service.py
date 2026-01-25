@@ -1,19 +1,16 @@
 from datetime import datetime, timezone
 from app.models.court import Court
-from app.modules.arena.repository import ArenaRepository
-from app.shared.enums import UserRole
 from app.shared.exceptions import ForbiddenException, NotFoundException
-from app.modules.court.repository import CourtRepository
 
 
 class CourtService:
 
-    def __init__(self, court_repo: CourtRepository, arena_repo: ArenaRepository):
+    def __init__(self, court_repo, arena_service):
         self.court_repo = court_repo
-        self.arena_repo = arena_repo
+        self.arena_service = arena_service
 
     def create(self, user, data):
-        arena = self.arena_repo.get_by_id(data.arena_id)
+        arena = self.arena_service.get_by_id(data.arena_id)
 
         if not arena:
             raise NotFoundException("Arena não encontrada")
@@ -28,13 +25,19 @@ class CourtService:
 
         return self.court_repo.create(court)
 
+    def get_by_id(self, court_id):
+        return self.court_repo.get_by_id(court_id)
+
+    def list_all(self, arena_id):
+      return self.court_repo.list_all(arena_id)
+
     def list_by_arena(self, user, arena_id):
-        arena = self.arena_repo.get_by_id(arena_id)
+        arena = self.arena_service.get_by_id(arena_id)
 
         if not arena or arena.owner_id != user.id:
             raise ForbiddenException("Sem premisão")
 
-        return self.court_repo.get_by_arena(arena_id)
+        return self.court_repo.list_all(arena_id)
 
     def update(self, user, data, court_id):
         court = self.court_repo.get_by_id(court_id)
@@ -42,7 +45,7 @@ class CourtService:
         if not court:
             raise NotFoundException("Quadra não encontrada")
 
-        arena = self.arena_repo.get_by_id(court.arena_id)
+        arena = self.arena_service.get_by_id(court.arena_id)
 
         if not arena:
             raise NotFoundException("Arena não encontrada")
@@ -59,7 +62,7 @@ class CourtService:
         if data.price_per_hour:
             court.price_per_hour = data.price_per_hour
 
-        court.update_at = datetime.now(timezone.utc)
+        court.updated_at = datetime.now(timezone.utc)
 
         self.court_repo.update(court)
 
@@ -69,7 +72,7 @@ class CourtService:
         if not court:
             raise NotFoundException("Quadra não encontrada")
 
-        arena = self.arena_repo.get_by_id(court.arena_id)
+        arena = self.arena_service.get_by_id(court.arena_id)
 
         if not arena:
             raise NotFoundException("Arena não encontrada")
