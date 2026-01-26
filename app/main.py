@@ -43,6 +43,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/")
+def home():
+    return {"message": "Welcome to the Arena Manager API"}
+
+
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(arena_router)
