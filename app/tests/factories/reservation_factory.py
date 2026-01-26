@@ -1,22 +1,25 @@
 from datetime import datetime, timezone
-
-from app.models.reservation import Reservations
+from app.models.reservation import Reservation
+from app.shared.enums import ReservationStatus
 
 
 def reservation_factory(
     db,
-    *,
-    user_id: int,
+    client_id: int,
     schedule_id: int,
+    status=ReservationStatus.active,
+    cancelled_at=None
 ):
-    reservation = Reservations(
-        user_id=user_id,
+    reservation = Reservation(
+        client_id=client_id,
         schedule_id=schedule_id,
-        status="Ocupado",
-        created_at=datetime.now(timezone.utc)
+        status=status,
+        cancelled_at=cancelled_at,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
     )
 
-    db.commit(reservation)
+    db.add(reservation)
     db.commit()
     db.refresh(reservation)
 

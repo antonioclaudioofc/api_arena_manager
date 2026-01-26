@@ -1,37 +1,48 @@
-from app.schemas.auth import ResponseUser
+from app.schemas.user import ResponseUser
 from pydantic import ConfigDict
 from app.schemas.schedule import ResponseSchedule
+from app.schemas.court import ResponseCourt
 from pydantic import BaseModel
 from typing import Optional
 
-
-class BaseReservation(BaseModel):
-    schedule_id: Optional[int] = None
+from app.shared.enums import ReservationStatus
 
 
-class RequestReservation(BaseReservation):
+class RequestReservation(BaseModel):
     schedule_id: int
 
 
-class UpdateReservation(BaseReservation):
-    pass
+class UpdateReservation(BaseModel):
+    status: ReservationStatus
 
 
-class ResponseReservation(BaseReservation):
-    status: str
-    schedule: ResponseSchedule
-    created_at: str
-    updated_at: Optional[str]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ResponseReservationAdmin(BaseModel):
+class ResponseReservation(BaseModel):
     id: int
-    status: str
-    schedule: ResponseSchedule
-    user: ResponseUser
+    schedule_id: int
+    client_id: int
+    status: ReservationStatus
     created_at: str
-    updated_at: Optional[str]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+
+class ResponseReservationEnriched(BaseModel):
+    id: int
+    status: ReservationStatus
+    created_at: str
+    cancelled_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    client: ResponseUser
+    
+    schedule: ResponseSchedule
+    
+    court: ResponseCourt
+    
+    arena_name: str
+    arena_city: str
+    arena_address: str
+
+    model_config = ConfigDict(from_attributes=True)
+

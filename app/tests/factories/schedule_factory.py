@@ -1,24 +1,24 @@
-from datetime import datetime, timezone
-from app.models.schedule import Schedules
+from datetime import datetime, timezone, timedelta
+from app.models.schedule import Schedule
 
 
 def schedule_factory(
     db,
-    *,
     court_id: int,
-    date: str = "2025-01-10",
-    start_time: str = "08:00",
-    end_time: str = "09:00",
-    available: bool = True,
+    date=None,
+    start_time="10:00",
+    end_time="11:00"
 ):
-    schedule = Schedules(
+    if date is None:
+        date = (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
+    
+    schedule = Schedule(
         court_id=court_id,
         date=date,
         start_time=start_time,
         end_time=end_time,
-        available=available,
-        created_at=datetime.now(timezone.utc).isoformat(),
-        updated_at=None,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
     )
 
     db.add(schedule)

@@ -1,55 +1,64 @@
 from datetime import date, datetime, timedelta, timezone
-from app.models.schedule import Schedules
+from app.models.schedule import Schedule
 from app.modules.schedule.exceptions import ConflictException
-from app.modules.schedule.repository import ScheduleRepository
-from app.modules.court.repository import CourtRepository
-from app.shared.exceptions import NotFoundException, BadRequestException
+from app.shared.exceptions import (
+    NotFoundException,
+    BadRequestException,
+    ForbiddenException
+)
 
 
 class ScheduleService:
 
-    @staticmethod
-    def list_all(db):
-        return ScheduleRepository.list_all(db)
+    def __init__(
+        self,
+        schedule_repo,
+        court_service,
+    ):
+        self.schedule_repo = schedule_repo
+        self.court_service = court_service
 
-    @staticmethod
-    def get_by_id(db, schedule_id: int):
-        schedule_model = ScheduleRepository.get_by_id(db, schedule_id)
-
-        if not schedule_model:
-            raise NotFoundException("Horário não encontrado")
-
-        return schedule_model
-
-    @staticmethod
-    def create_batch(db, schedules):
-
-        court = CourtRepository.get_by_id(db, schedules.court_id)
+    def create(self, user, data):
+        court = self.court_service.get_by_id(data.court_id)
 
         if not court:
             raise NotFoundException("Quadra não encontrada")
 
-        if schedules.interval_minutes <= 0:
+        if court.arena.owner_id != user.id:
+            raise ForbiddenException("Sem permissão")
+
+        schedule = Schedule(
+            **data.model_dump(),
+            created_at=datetime.now(timezone.utc)
+        )
+
+        self.schedule_repo.create(schedule)
+
+    def create_batch(self, user, data):
+        court = self.court_service.get_by_id(data.court_id)
+
+        if not court:
+            raise NotFoundException("Quadra não encontrada")
+
+        if court.arena.owner_id != user.id:
+            raise ForbiddenException("Sem permissão")
+
+        if data.interval_minutes <= 0:
             raise BadRequestException("Intervalo inválido")
 
         schedules_to_create = []
 
-        start_date = date.fromisoformat(schedules.start_date)
-        end_date = date.fromisoformat(schedules.end_date)
-
+        start_date = date.fromisoformat(data.start_date)
+        end_date = date.fromisoformat(data.end_date)
         current_date = start_date
 
         while current_date <= end_date:
-            if current_date.weekday() not in schedules.weekdays:
+            if current_date.weekday() not in data.weekdays:
                 current_date += timedelta(days=1)
                 continue
 
-            current_time = datetime.strptime(
-                schedules.start_time, "%H:%M"
-            )
-            end_time_limit = datetime.strptime(
-                schedules.end_time, "%H:%M"
-            )
+            current_time = datetime.strptime(data.start_time, "%H:%M")
+            end_time_limit = datetime.strptime(data.end_time, "%H:%M")
 
             if current_time >= end_time_limit:
                 raise BadRequestException(
@@ -58,28 +67,26 @@ class ScheduleService:
 
             while current_time < end_time_limit:
                 next_time = current_time + timedelta(
-                    minutes=schedules.interval_minutes
+                    minutes=data.interval_minutes
                 )
 
                 if next_time > end_time_limit:
                     break
 
-                if ScheduleRepository.exists(
-                    db=db,
-                    court_id=schedules.court_id,
+                if self.schedule_repo.exists(
+                    court_id=data.court_id,
                     date=current_date.isoformat(),
                     start_time=current_time.strftime("%H:%M"),
                     end_time=next_time.strftime("%H:%M"),
                 ):
-                    raise ConflictException()
+                    raise ConflictException("Horário já existente")
 
                 schedules_to_create.append(
-                    Schedules(
-                        court_id=schedules.court_id,
+                    Schedule(
+                        court_id=data.court_id,
                         date=current_date.isoformat(),
                         start_time=current_time.strftime("%H:%M"),
                         end_time=next_time.strftime("%H:%M"),
-                        available=True,
                         created_at=datetime.now(timezone.utc),
                     )
                 )
@@ -88,31 +95,36 @@ class ScheduleService:
 
             current_date += timedelta(days=1)
 
-        ScheduleRepository.bulk_create(db, schedules_to_create)
+        self.schedule_repo.bulk_create(schedules_to_create)
 
-    @staticmethod
-    def create(db, user: dict, schedule_request):
+    def get_by_id(self, schedule_id):
+        return self.schedule_repo.get_by_id(schedule_id)
 
-        court = CourtRepository.get_by_id(db, schedule_request.court_id)
+    def list_by_court(self, court_id):
+        rows = self.schedule_repo.list_with_availability(court_id)
 
-        if not court:
-            raise NotFoundException("Quadra não encontrado")
+        courts = []
+        for schedule, reservation_id in rows:
+            courts.append({
+                "id": schedule.id,
+                "date": schedule.date,
+                "start_time": schedule.start_time,
+                "end_time": schedule.end_time,
+                "court_id": schedule.court_id,
+                "is_available": reservation_id is None
+            })
 
-        schedule_model = Schedules(
-            **schedule_request.model_dump(),
-            owner_id=user["id"],
-            created_at=datetime.now(timezone.utc)
-        )
+        return courts
 
-        return ScheduleRepository.create(db, schedule_model)
-
-    @staticmethod
-    def update(db, data, schedule_id: int):
-
-        schedule = ScheduleRepository.get_by_id(db, schedule_id)
+    def update(self, user, data, schedule_id):
+        schedule = self.schedule_repo.get_by_id(schedule_id)
 
         if not schedule:
             raise NotFoundException("Horário não encontrado")
+
+        court = schedule.court
+        if court.arena.owner_id != user.id:
+            raise ForbiddenException("Sem permissão")
 
         if data.date is not None:
             schedule.date = data.date
@@ -123,21 +135,19 @@ class ScheduleService:
         if data.end_time is not None:
             schedule.end_time = data.end_time
 
-        if data.available is not None:
-            schedule.available = data.available
-
-        if data.court_id is not None:
-            schedule.court_id = data.court_id
-
         schedule.updated_at = datetime.now(timezone.utc)
 
-        ScheduleRepository.update(db, schedule)
+        self.schedule_repo.update(schedule)
 
-    @staticmethod
-    def delete(db, schedule_id: int):
+    def delete(self, user, schedule_id):
+        schedule = self.schedule_repo.get_by_id(schedule_id)
 
-        schedule_model = ScheduleRepository.get_by_id(db, schedule_id)
-        if not schedule_model:
+        if not schedule:
             raise NotFoundException("Horário não encontrado")
 
-        ScheduleRepository.delete(db, schedule_model)
+        court = schedule.court
+
+        if court.arena.owner_id != user.id:
+            raise ForbiddenException("Sem permissão")
+
+        self.schedule_repo.delete(schedule)

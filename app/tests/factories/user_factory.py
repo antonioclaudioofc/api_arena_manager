@@ -1,21 +1,21 @@
 from datetime import datetime, timezone
+import uuid
 from app.core.security import hash_password
-from app.models.auth import Users
+from app.models.user import User
+from app.shared.enums import UserRole
 
 
 def user_factory(
     db,
-    *,
-    email="user@test.com",
-    username="user",
-    password="123456",
-    role="client",
+    role=UserRole.client,
+    password="123456"
 ):
-    user = Users(
-        email=email,
-        username=username,
-        first_name="Test",
-        last_name="User",
+    unique = uuid.uuid4().hex[:8]
+
+    user = User(
+        email=f"user_{unique}@test.com",
+        username=f"user_{unique}",
+        name=f"User{unique}",
         hashed_password=hash_password(password),
         role=role,
         created_at=datetime.now(timezone.utc)
@@ -23,6 +23,6 @@ def user_factory(
 
     db.add(user)
     db.commit()
-    db.refresh
+    db.refresh(user)
 
     return user

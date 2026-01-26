@@ -1,29 +1,65 @@
-from fastapi import APIRouter, Depends, Path
-from app.schemas.schedule import ResponseSchedule
+from fastapi import APIRouter, Depends
+from app.modules.auth.dependencies import get_current_user
+from app.modules.schedule.dependencies import get_schedule_service
+from app.schemas.schedule import RequestSchedule, RequestScheduleBatch, UpdateSchedule
 from app.modules.schedule.service import ScheduleService
-from app.dependencies import db_dependency
 from starlette import status
-from typing import Annotated
-from app.modules.auth.service import AuthService
+from app.shared.schemas import MessageResponse
 
 router = APIRouter(
     prefix="/schedules",
     tags=["schedules"]
 )
 
-user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
-
-@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponseSchedule])
-def list_schedules(
-    db: db_dependency,
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=MessageResponse)
+def create(
+    data: RequestSchedule,
+    user=Depends(get_current_user),
+    schedule_service=Depends(get_schedule_service),
 ):
-    return ScheduleService.list_all(db)
+    schedule_service.create(user, data)
+
+    return {
+        "message": "Horário criado com sucesso"
+    }
 
 
-@router.get("/{schedule_id}", status_code=status.HTTP_200_OK, response_model=ResponseSchedule)
-def get_schedule(
-        db: db_dependency,
-        schedule_id: int = Path(gt=0)
+@router.post("/batch", status_code=status.HTTP_201_CREATED, response_model=MessageResponse)
+def create_batch(
+    data: RequestScheduleBatch,
+    user=Depends(get_current_user),
+    schedule_service=Depends(get_schedule_service),
 ):
-    return ScheduleService.get_by_id(db, schedule_id)
+    schedule_service.create_batch(user, data)
+
+    return {
+        "message": "Horários criados com sucesso"
+    }
+
+
+@router.put("/{schedule_id}", response_model=MessageResponse)
+def update(
+    schedule_id: int,
+    data: UpdateSchedule,
+    user=Depends(get_current_user),
+    schedule_service=Depends(get_schedule_service),
+):
+    schedule_service.update(user, data, schedule_id)
+
+    return {
+        "message": "Horário atualizado com sucesso"
+    }
+
+
+@router.delete("/{schedule_id}", response_model=MessageResponse)
+def delete(
+    schedule_id: int,
+    user=Depends(get_current_user),
+    schedule_service: ScheduleService = Depends(get_schedule_service),
+):
+    schedule_service.delete(user, schedule_id)
+
+    return {
+        "message": "Horário deletado com sucesso"
+    }

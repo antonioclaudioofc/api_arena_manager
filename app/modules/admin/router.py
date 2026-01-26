@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Path, Query
 from app.schemas.admin import RequestScheduleBatch
-from app.schemas.auth import ResponseUser
+from app.schemas.user import ResponseUser
 from app.schemas.reservation import ResponseReservationAdmin
 from app.schemas.schedule import RequestSchedule, UpdateSchedule
 from app.dependencies import db_dependency

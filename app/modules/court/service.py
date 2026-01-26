@@ -1,61 +1,83 @@
 from datetime import datetime, timezone
-from app.models.court import Courts
-from app.shared.exceptions import NotFoundException
-from app.modules.court.repository import CourtRepository
+from app.models.court import Court
+from app.shared.exceptions import ForbiddenException, NotFoundException
 
 
 class CourtService:
 
-    @staticmethod
-    def get_by_id(db, court_id: int):
-        court_model = CourtRepository.get_by_id(db, court_id)
+    def __init__(self, court_repo, arena_service):
+        self.court_repo = court_repo
+        self.arena_service = arena_service
 
-        if not court_model:
-            raise NotFoundException("Quadra não encontrada")
+    def create(self, user, data):
+        arena = self.arena_service.get_by_id(data.arena_id)
 
-        return court_model
+        if not arena:
+            raise NotFoundException("Arena não encontrada")
 
-    @staticmethod
-    def list_all(db):
-        return CourtRepository.list_all(db)
+        if arena.owner_id != user.id:
+            raise ForbiddenException("Sem premisão")
 
-    @staticmethod
-    def create(db, user: dict, court_model):
-
-        court_model = Courts(
-            **court_model.model_dump(),
-            owner_id=user["id"],
+        court = Court(
+            **data.model_dump(),
             created_at=datetime.now(timezone.utc)
         )
 
-        return CourtRepository.create(db, court_model)
+        return self.court_repo.create(court)
 
-    @staticmethod
-    def update(db, data, court_id: int):
+    def get_by_id(self, court_id):
+        return self.court_repo.get_by_id(court_id)
 
-        court_model = CourtRepository.get_by_id(db, court_id)
+    def list_all(self, arena_id):
+      return self.court_repo.list_all(arena_id)
 
-        if not court_model:
+    def list_by_arena(self, user, arena_id):
+        arena = self.arena_service.get_by_id(arena_id)
+
+        if not arena or arena.owner_id != user.id:
+            raise ForbiddenException("Sem premisão")
+
+        return self.court_repo.list_all(arena_id)
+
+    def update(self, user, data, court_id):
+        court = self.court_repo.get_by_id(court_id)
+
+        if not court:
             raise NotFoundException("Quadra não encontrada")
 
-        if data.name is not None:
-            court_model.name = data.name
+        arena = self.arena_service.get_by_id(court.arena_id)
 
-        if data.sports_type is not None:
-            court_model.sports_type = data.sports_type
+        if not arena:
+            raise NotFoundException("Arena não encontrada")
 
-        if data.description is not None:
-            court_model.description = data.description
+        if arena.owner_id != user.id:
+            raise ForbiddenException("Sem premisão para editar esta quadra")
 
-        court_model.updated_at = datetime.now(timezone.utc)
+        if data.name:
+            court.name = data.name
 
-        CourtRepository.update(db, court_model)
+        if data.sports_type:
+            court.sports_type = data.sports_type
 
-    @staticmethod
-    def delete(db, court_id: int):
+        if data.price_per_hour:
+            court.price_per_hour = data.price_per_hour
 
-        court_model = CourtRepository.get_by_id(db, court_id)
-        if not court_model:
+        court.updated_at = datetime.now(timezone.utc)
+
+        self.court_repo.update(court)
+
+    def delete(self, user, court_id):
+        court = self.court_repo.get_by_id(court_id)
+
+        if not court:
             raise NotFoundException("Quadra não encontrada")
 
-        CourtRepository.delete(db, court_model)
+        arena = self.arena_service.get_by_id(court.arena_id)
+
+        if not arena:
+            raise NotFoundException("Arena não encontrada")
+
+        if arena.owner_id != user.id:
+            raise ForbiddenException("Sem premisão para remover esta quadra")
+
+        self.court_repo.delete(court)

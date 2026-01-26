@@ -1,23 +1,26 @@
 from app.core.database import Base
-from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 
-class Courts(Base):
+class Court(Base):
     __tablename__ = "courts"
 
     id = Column(Integer, primary_key=True, index=True)
+    arena_id = Column(Integer, ForeignKey("arenas.id", ondelete="CASCADE"))
     name = Column(String)
     sports_type = Column(String)
+    price_per_hour = Column(Numeric)
     description = Column(String)
-    owner_id = Column(Integer, ForeignKey("users.id"))
-    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
 
-    created_at = Column(String)
-    updated_at = Column(String)
-
+    arena = relationship(
+        "Arena",
+        back_populates="courts"
+    )
     schedules = relationship(
-        "Schedules",
+        "Schedule",
         back_populates="court",
-        cascade="all, delete-orphan"
+        cascade="all, delete"
     )

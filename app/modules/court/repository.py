@@ -1,30 +1,39 @@
-from app.models.court import Courts
+from app.models.court import Court
 
 
 class CourtRepository:
 
-    @staticmethod
-    def get_by_id(db, court_id):
-        return db.query(Courts).filter(Courts.id == court_id).first()
+    def __init__(self, db):
+        self.db = db
 
-    @staticmethod
-    def list_all(db):
-        return db.query(Courts).all()
-
-    @staticmethod
-    def create(db, court):
-        db.add(court)
-        db.commit()
-        db.refresh(court)
+    def create(self, court):
+        self.db.add(court)
+        self.db.commit()
+        self.db.refresh(court)
 
         return court
 
-    @staticmethod
-    def update(db, court):
-        db.commit()
-        db.refresh(court)
+    def list_all(self, arena_id):
+        return (
+            self.db.query(Court)
+            .filter(Court.arena_id == arena_id)
+            .all()
+        )
 
-    @staticmethod
-    def delete(db, court):
-        db.delete(court)
-        db.commit()
+    def get_by_id(self, court_id):
+        return (
+            self.db.query(Court)
+            .filter(Court.id == court_id)
+            .first()
+        )
+
+    def update(self, court):
+        self.db.commit()
+        self.db.refresh(court)
+
+        return court
+
+    def delete(self, court):
+        self.db.delete(court)
+        self.db.commit()
+

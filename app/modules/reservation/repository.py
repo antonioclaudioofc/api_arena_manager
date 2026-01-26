@@ -1,37 +1,48 @@
-from app.models.reservation import Reservations
+from app.models.reservation import Reservation
+from app.shared.enums import ReservationStatus
 
 
 class ReservationRepository:
 
-    @staticmethod
-    def get_all(db):
-        return db.query(Reservations).all()
+    def __init__(self, db):
+        self.db = db
 
-    @staticmethod
-    def get_by_id(db, reservation_id: int):
-        return db.query(Reservations).filter(Reservations.id == reservation_id).first()
-
-    @staticmethod
-    def get_by_user(user_id: int, db):
-        return (
-            db.query(Reservations)
-            .filter(Reservations.user_id == user_id)
-            .all()
-        )
-
-    @staticmethod
-    def get_by_owner(user_id: id, db, reservation_id: int):
-        return db.query(Reservations).filter(Reservations.id == reservation_id, Reservations.user_id == user_id).first()
-
-    @staticmethod
-    def create(reservation, db):
-        db.add(reservation)
-        db.commit()
-        db.refresh(reservation)
+    def create(self, reservation):
+        self.db.add(reservation)
+        self.db.commit()
+        self.db.refresh(reservation)
 
         return reservation
 
-    @staticmethod
-    def delete(reservation, db):
-        db.delete(reservation)
-        db.commit()
+    def get_by_id(self, reservation_id):
+        return (
+            self.db.query(Reservation)
+            .filter(Reservation.id == reservation_id)
+            .first()
+        )
+
+    def get_active_by_schedule(self, schedule_id):
+        return (
+            self.db.query(Reservation)
+            .filter(
+                Reservation.schedule_id == schedule_id,
+                Reservation.status == ReservationStatus.active
+            )
+            .first()
+        )
+
+    def list_by_client(self, client_id):
+        return (
+            self.db.query(Reservation)
+            .filter(Reservation.client_id == client_id)
+            .all()
+        )
+
+    def list_all(self):
+        return self.db.query(Reservation).all()
+
+    def update(self, reservation):
+        self.db.commit()
+        self.db.refresh(reservation)
+
+        return reservation

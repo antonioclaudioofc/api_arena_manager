@@ -1,23 +1,20 @@
 from datetime import datetime, timezone
-from app.dependencies import db_dependency
-from app.models.court import Courts
+from app.models.court import Court
 
 
 def court_factory(
-    db: db_dependency,
-    *,
-    name: str = "Quadra A",
-    sports_type: str = "Vôlei",
-    description: str = "Quadra coberta",
-    created_at=datetime.now(timezone.utc),
-    updated_at=None,
+    db,
+    arena_id,
+    name="Quadra A",
+    sports_type="Vôleiball",
+    price_per_hour=99.99
 ):
-    court = Courts(
+    court = Court(
+        arena_id=arena_id,
         name=name,
         sports_type=sports_type,
-        description=description,
-        created_at=created_at,
-        updated_at=updated_at
+        price_per_hour=price_per_hour,
+        created_at=datetime.now(timezone.utc)
     )
 
     db.add(court)
