@@ -5,7 +5,7 @@ from app.modules.auth.service import AuthService
 from app.modules.user.service import UserService
 from app.shared.exceptions import UnathorizedException
 from app.shared.repositories.user_repository import UserRepository
-from .secutiry import decode_token, oauth2_bearer
+from app.modules.auth.secutiry import decode_token, oauth2_bearer
 from fastapi import Depends
 from app.dependencies import db_dependency
 
