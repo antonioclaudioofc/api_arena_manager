@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.modules.auth.dependencies import get_current_user
 from app.modules.schedule.dependencies import get_schedule_service
-from app.schemas.schedule import RequestScheduleBatch, UpdateSchedule
+from app.schemas.schedule import RequestSchedule, RequestScheduleBatch, UpdateSchedule
 from app.modules.schedule.service import ScheduleService
 from starlette import status
 from app.shared.schemas import MessageResponse
@@ -10,6 +10,19 @@ router = APIRouter(
     prefix="/schedules",
     tags=["schedules"]
 )
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=MessageResponse)
+def create(
+    data: RequestSchedule,
+    user=Depends(get_current_user),
+    schedule_service=Depends(get_schedule_service),
+):
+    schedule_service.create(user, data)
+
+    return {
+        "message": "Horário criado com sucesso"
+    }
 
 
 @router.post("/batch", status_code=status.HTTP_201_CREATED, response_model=MessageResponse)

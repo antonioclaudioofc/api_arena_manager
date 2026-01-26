@@ -2,7 +2,7 @@ from . import user_factory, arena_factory, court_factory, login, auth_headers
 
 
 def test_list_public_courts_by_arena_without_auth(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
 
     court_factory(db, arena.id, name="Quadra 1")
@@ -19,7 +19,7 @@ def test_list_public_courts_by_arena_with_auth(db, client):
     user = user_factory(db)
     token = login(client, user.username)
 
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court_factory(db, arena.id, name="Quadra Auth")
 
@@ -34,7 +34,7 @@ def test_list_public_courts_by_arena_with_auth(db, client):
 
 
 def test_list_public_courts_empty(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
 
     response = client.get(f"/public/arenas/{arena.id}/courts")
@@ -50,7 +50,7 @@ def test_list_public_courts_nonexistent_arena(db, client):
 
 
 def test_list_public_courts_returns_correct_fields(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(
         db,

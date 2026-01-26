@@ -3,7 +3,7 @@ from . import user_factory, arena_factory, court_factory, login, auth_headers
 
 
 def test_owner_can_create_schedule(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     token = login(client, owner.username)
     
     arena = arena_factory(db, owner.id)
@@ -29,7 +29,7 @@ def test_owner_can_create_schedule(db, client):
 
 
 def test_owner_can_create_schedule(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     token = login(client, owner.username)
     
     arena = arena_factory(db, owner.id)
@@ -54,10 +54,10 @@ def test_owner_can_create_schedule(db, client):
 
 
 def test_client_cannot_create_schedule(db, client):
-    client_user = user_factory(db, role="client")
+    client_user = user_factory(db)
     token = login(client, client_user.username)
     
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(db, arena.id)
     
@@ -80,7 +80,7 @@ def test_client_cannot_create_schedule(db, client):
 
 
 def test_cannot_create_schedule_without_auth(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(db, arena.id)
     
@@ -95,12 +95,12 @@ def test_cannot_create_schedule_without_auth(db, client):
     
     response = client.post("/schedules", json=payload)
     
-    assert response.status_code == 404
+    assert response.status_code == 401
 
 
 def test_owner_cannot_create_schedule_for_other_owner_court(db, client):
-    owner1 = user_factory(db, role="owner")
-    owner2 = user_factory(db, role="owner")
+    owner1 = user_factory(db)
+    owner2 = user_factory(db)
     token = login(client, owner1.username)
     
     arena = arena_factory(db, owner2.id)

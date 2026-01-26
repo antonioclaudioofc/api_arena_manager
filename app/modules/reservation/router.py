@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from app.modules.auth.dependencies import get_current_user
 from app.modules.reservation.dependencies import get_reservation_service
 from app.schemas.reservation import RequestReservation
@@ -40,7 +40,7 @@ def list_my_reservations(
     return reservation_service.list_my_reservations(user)
 
 
-@router.delete("/{reservation_id}", response_model=MessageResponse)
+@router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel(
     reservation_id: int,
     user=Depends(get_current_user),
@@ -48,6 +48,4 @@ def cancel(
 ):
     reservation_service.cancel(user, reservation_id)
 
-    return {
-        "message": "Reserva cancelada com sucesso"
-    }
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

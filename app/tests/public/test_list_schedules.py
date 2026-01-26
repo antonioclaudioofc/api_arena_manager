@@ -1,9 +1,8 @@
-from datetime import datetime, timezone, timedelta
 from . import user_factory, arena_factory, court_factory, schedule_factory, login, auth_headers
 
 
 def test_list_public_schedules_by_court_without_auth(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(db, arena.id)
 
@@ -19,7 +18,7 @@ def test_list_public_schedules_with_auth(db, client):
     user = user_factory(db)
     token = login(client, user.username)
 
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(db, arena.id)
 
@@ -35,7 +34,7 @@ def test_list_public_schedules_with_auth(db, client):
 
 
 def test_list_public_schedules_empty(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(db, arena.id)
 
@@ -52,7 +51,7 @@ def test_list_public_schedules_nonexistent_court(db, client):
 
 
 def test_list_public_schedules_returns_correct_fields(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(db, arena.id)
 

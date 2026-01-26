@@ -2,7 +2,7 @@ from . import user_factory, arena_factory, login, auth_headers
 
 
 def test_list_public_arenas_without_auth(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena_factory(db, owner.id, name="Arena 1")
     arena_factory(db, owner.id, name="Arena 2")
 
@@ -17,7 +17,7 @@ def test_list_public_arenas_with_auth(db, client):
     user = user_factory(db)
     token = login(client, user.username)
 
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena_factory(db, owner.id, name="Arena Test")
 
     response = client.get(
@@ -37,7 +37,7 @@ def test_list_public_arenas_empty(db, client):
 
 
 def test_get_specific_public_arena(db, client):
-    owner = user_factory(db, role="owner")
+    owner = user_factory(db)
     arena = arena_factory(
         db, owner.id, name="Arena Especial", city="São Paulo")
 
