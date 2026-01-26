@@ -1,6 +1,9 @@
-from app.main import app
 import sys
-import os
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
+root = Path(__file__).parent.parent
+sys.path.insert(0, str(root))
+
+from app.main import app
+
+handler = app
