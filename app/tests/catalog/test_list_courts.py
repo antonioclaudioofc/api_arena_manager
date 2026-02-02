@@ -1,21 +1,21 @@
 from . import user_factory, arena_factory, court_factory, login, auth_headers
 
 
-def test_list_public_courts_by_arena_without_auth(db, client):
+def test_list_catalog_courts_by_arena_without_auth(db, client):
     owner = user_factory(db)
     arena = arena_factory(db, owner.id)
 
     court_factory(db, arena.id, name="Quadra 1")
     court_factory(db, arena.id, name="Quadra 2")
 
-    response = client.get(f"/public/arenas/{arena.id}/courts")
+    response = client.get(f"/catalog/arenas/{arena.id}/courts")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert response.json()[0]["name"] in ["Quadra 1", "Quadra 2"]
 
 
-def test_list_public_courts_by_arena_with_auth(db, client):
+def test_list_catalog_courts_by_arena_with_auth(db, client):
     user = user_factory(db)
     token = login(client, user.username)
 
@@ -24,7 +24,7 @@ def test_list_public_courts_by_arena_with_auth(db, client):
     court_factory(db, arena.id, name="Quadra Auth")
 
     response = client.get(
-        f"/public/arenas/{arena.id}/courts",
+        f"/catalog/arenas/{arena.id}/courts",
         headers=auth_headers(token)
     )
 
@@ -33,23 +33,23 @@ def test_list_public_courts_by_arena_with_auth(db, client):
     assert response.json()[0]["name"] == "Quadra Auth"
 
 
-def test_list_public_courts_empty(db, client):
+def test_list_catalog_courts_empty(db, client):
     owner = user_factory(db)
     arena = arena_factory(db, owner.id)
 
-    response = client.get(f"/public/arenas/{arena.id}/courts")
+    response = client.get(f"/catalog/arenas/{arena.id}/courts")
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_list_public_courts_nonexistent_arena(db, client):
-    response = client.get("/public/arenas/999/courts")
+def test_list_catalog_courts_nonexistent_arena(db, client):
+    response = client.get("/catalog/arenas/999/courts")
 
     assert response.status_code == 404
 
 
-def test_list_public_courts_returns_correct_fields(db, client):
+def test_list_catalog_courts_returns_correct_fields(db, client):
     owner = user_factory(db)
     arena = arena_factory(db, owner.id)
     court = court_factory(
@@ -60,7 +60,7 @@ def test_list_public_courts_returns_correct_fields(db, client):
         price_per_hour=150.00
     )
 
-    response = client.get(f"/public/arenas/{arena.id}/courts")
+    response = client.get(f"/catalog/arenas/{arena.id}/courts")
 
     assert response.status_code == 200
     data = response.json()[0]

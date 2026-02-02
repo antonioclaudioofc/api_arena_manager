@@ -11,6 +11,7 @@ from app.modules.arena.router import router as arena_router
 from app.modules.court.router import router as court_router
 from app.modules.schedule.router import router as schedule_router
 from app.modules.reservation.router import router as reservation_router
+from app.modules.catalog.router import router as catalog_router
 
 
 app = FastAPI(title="Arena Manager")
@@ -54,3 +55,4 @@ app.include_router(arena_router)
 app.include_router(court_router)
 app.include_router(schedule_router)
 app.include_router(reservation_router)
+app.include_router(catalog_router)
