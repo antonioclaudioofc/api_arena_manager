@@ -7,8 +7,8 @@ from app.schemas.court import ResponseCourt
 from app.shared.exceptions import NotFoundException
 
 router = APIRouter(
-    prefix="/public",
-    tags=["public"]
+    prefix="/catalog",
+    tags=["catalog"]
 )
 
 
