@@ -21,28 +21,9 @@ class ResponseReservation(BaseModel):
     schedule_id: int
     client_id: int
     status: ReservationStatus
-    created_at: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-
-class ResponseReservationEnriched(BaseModel):
-    id: int
-    status: ReservationStatus
-    created_at: str
-    cancelled_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    
-    client: ResponseUser
-    
     schedule: ResponseSchedule
-    
-    court: ResponseCourt
-    
-    arena_name: str
-    arena_city: str
-    arena_address: str
+
 
     model_config = ConfigDict(from_attributes=True)
+
 
