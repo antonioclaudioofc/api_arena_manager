@@ -27,6 +27,22 @@ class ScheduleService:
         if court.arena.owner_id != user.id:
             raise ForbiddenException("Sem permissão")
 
+        schedule_date = date.fromisoformat(data.date)
+        today = date.today()
+
+        if schedule_date < today:
+            raise BadRequestException(
+                "Não é possível criar horários para datas no passado"
+            )
+
+        start_time = datetime.strptime(data.start_time, "%H:%M")
+        end_time = datetime.strptime(data.end_time, "%H:%M")
+
+        if start_time >= end_time:
+            raise BadRequestException(
+                "Horário inicial deve ser menor que o horário final"
+            )
+
         schedule = Schedule(
             **data.model_dump(),
             created_at=datetime.now(timezone.utc)
@@ -46,24 +62,36 @@ class ScheduleService:
         if data.interval_minutes <= 0:
             raise BadRequestException("Intervalo inválido")
 
-        schedules_to_create = []
-
         start_date = date.fromisoformat(data.start_date)
         end_date = date.fromisoformat(data.end_date)
+        today = date.today()
+
+        if start_date < today:
+            raise BadRequestException("Data inicial não pode ser no passado")
+
+        if end_date < start_date:
+            raise BadRequestException(
+                "Data final deve ser maior que a inicial")
+
+        current_time = datetime.strptime(data.start_time, "%H:%M")
+        end_time_limit = datetime.strptime(data.end_time, "%H:%M")
+
+        if current_time >= end_time_limit:
+            raise BadRequestException(
+                "Horário inicial deve ser menor que o final"
+            )
+
+        weekdays = data.weekdays if data.weekdays else [0, 1, 2, 3, 4, 5, 6]
+
+        schedules_to_create = []
         current_date = start_date
 
         while current_date <= end_date:
-            if current_date.weekday() not in data.weekdays:
+            if current_date.weekday() not in weekdays:
                 current_date += timedelta(days=1)
                 continue
 
             current_time = datetime.strptime(data.start_time, "%H:%M")
-            end_time_limit = datetime.strptime(data.end_time, "%H:%M")
-
-            if current_time >= end_time_limit:
-                raise BadRequestException(
-                    "Horário inicial deve ser menor que o final"
-                )
 
             while current_time < end_time_limit:
                 next_time = current_time + timedelta(

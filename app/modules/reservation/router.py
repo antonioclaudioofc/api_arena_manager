@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 from app.modules.auth.dependencies import get_current_user
 from app.modules.reservation.dependencies import get_reservation_service
-from app.schemas.reservation import RequestReservation
+from app.schemas.reservation import RequestReservation, ResponseReservation
 from starlette import status
 
 from app.shared.schemas import MessageResponse
@@ -32,7 +32,7 @@ def list_all(
     return reservation_service.list_all()
 
 
-@router.get("/me")
+@router.get("/me", response_model=list[ResponseReservation])
 def list_my_reservations(
     user=Depends(get_current_user),
     reservation_service=Depends(get_reservation_service),

@@ -1,6 +1,8 @@
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.court import ResponseCourt
+
 
 class BaseSchedule(BaseModel):
     date: Optional[str] = None
@@ -25,12 +27,14 @@ class ResponseSchedule(BaseSchedule):
     date: str
     start_time: str
     end_time: str
+    court: ResponseCourt
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ResponseScheduleWithAvailability(ResponseSchedule):
     available: bool
+
 
 class RequestScheduleBatch(BaseModel):
     court_id: int
@@ -40,4 +44,3 @@ class RequestScheduleBatch(BaseModel):
     end_time: str
     interval_minutes: int
     weekdays: List[int]
-    months: List[int]
