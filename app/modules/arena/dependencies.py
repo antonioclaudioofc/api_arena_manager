@@ -10,7 +10,7 @@ def get_arena_repository(db: db_dependency):
 
 
 def get_arena_service(
-        arena_repo=Depends(get_arena_repository),
-        user_service=Depends(get_user_service)
+    arena_repo=Depends(get_arena_repository),
+    user_service=Depends(get_user_service)
 ):
     return ArenaService(arena_repo, user_service)

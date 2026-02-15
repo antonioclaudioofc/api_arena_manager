@@ -29,7 +29,7 @@ class CourtService:
         return self.court_repo.get_by_id(court_id)
 
     def list_all(self, arena_id):
-      return self.court_repo.list_all(arena_id)
+        return self.court_repo.list_all(arena_id)
 
     def list_by_arena(self, user, arena_id):
         arena = self.arena_service.get_by_id(arena_id)
