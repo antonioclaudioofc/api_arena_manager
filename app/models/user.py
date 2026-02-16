@@ -1,5 +1,5 @@
 from app.core.database import Base
-from sqlalchemy import Column, DateTime, Enum, Integer, String
+from sqlalchemy import Column, DateTime, Enum, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 
 from app.shared.enums import UserRole
@@ -13,6 +13,8 @@ class User(Base):
     username = Column(String, unique=True)
     email = Column(String, unique=True)
     hashed_password = Column(String)
+    is_email_verified = Column(Boolean, default=False)
+    email_verification_token = Column(String, nullable=True)
     role = Column(
         Enum(UserRole, name="user_role"),
         default=UserRole.client

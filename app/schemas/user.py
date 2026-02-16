@@ -41,6 +41,9 @@ class ResponseUser(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 class UserVerification(BaseModel):
     password: str
