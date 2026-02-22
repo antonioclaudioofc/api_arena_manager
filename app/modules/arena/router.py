@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 
 from app.modules.arena.dependencies import get_arena_service
 from app.modules.auth.dependencies import get_current_user
@@ -24,10 +24,11 @@ def list(
 @router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def create(
     data: RequestArena,
+    background_tasks: BackgroundTasks,
     user=Depends(get_current_user),
     arena_service=Depends(get_arena_service)
 ):
-    arena_service.create(user, data)
+    arena_service.create(user, data, background_tasks)
 
     return {
         "message": "Arena criada com sucesso"

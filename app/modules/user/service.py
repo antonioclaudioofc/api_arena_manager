@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from app.modules.email_client.service import EmailClient
 from app.shared.enums import UserRole
 from app.shared.exceptions import (
     EmailAlreadyExistsException,
@@ -51,10 +52,16 @@ class UserService:
     def delete(self, user):
         self.user_repo.delete(user)
 
-    def promote_to_owner(self, user):
+    def promote_to_owner(self, user, arena, background_tasks):
         if user.role == UserRole.client:
             user.role = UserRole.owner
             user.updated_at = datetime.now(timezone.utc)
+
+            background_tasks.add_task(
+                EmailClient.send_promote_to_owner,
+                user,
+                arena
+            )
 
             self.user_repo.update(user)
 

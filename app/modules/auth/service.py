@@ -1,5 +1,3 @@
-from fastapi import BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm
 from app.modules.auth.secutiry import create_access_token
 from app.modules.email_client.service import EmailClient
 from app.shared.enums import UserRole
@@ -66,7 +64,7 @@ class AuthService:
             "token_type": "bearer"
         }
 
-    async def register(self, data, background_tasks: BackgroundTasks):
+    async def register(self, data, background_tasks):
         if self.user_repo.get_by_email(data.email):
             raise EmailAlreadyExistsException()
 
