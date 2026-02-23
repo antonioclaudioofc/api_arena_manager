@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from app.models.court import Court
+from app.modules.email_client.service import EmailClient
 from app.shared.exceptions import ForbiddenException, NotFoundException
 
 
@@ -9,7 +10,7 @@ class CourtService:
         self.court_repo = court_repo
         self.arena_service = arena_service
 
-    def create(self, user, data):
+    def create(self, user, data, background_tasks):
         arena = self.arena_service.get_by_id(data.arena_id)
 
         if not arena:
@@ -21,6 +22,13 @@ class CourtService:
         court = Court(
             **data.model_dump(),
             created_at=datetime.now(timezone.utc)
+        )
+
+        background_tasks.add_task(
+            EmailClient.send_create_new_court,
+            user,
+            arena,
+            court
         )
 
         return self.court_repo.create(court)

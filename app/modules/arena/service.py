@@ -1,14 +1,16 @@
 from datetime import datetime, timezone
 from app.models.arena import Arena
-from app.modules.arena.repository import ArenaRepository
-from app.modules.user.service import UserService
 from app.shared.enums import UserRole
 from app.shared.exceptions import ForbiddenException, NotFoundException
 
 
 class ArenaService:
 
-    def __init__(self, arena_repo: ArenaRepository, user_service: UserService):
+    def __init__(
+        self,
+        arena_repo,
+        user_service
+    ):
         self.arena_repo = arena_repo
         self.user_service = user_service
 

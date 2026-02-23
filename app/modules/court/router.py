@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from app.modules.auth.dependencies import get_current_user
 from app.modules.court.dependencies import get_court_service
 from app.schemas.court import RequestCourt, ResponseCourt, UpdateCourt
@@ -12,6 +12,20 @@ router = APIRouter(
 )
 
 
+@router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+def create(
+    data: RequestCourt,
+    background_tasks: BackgroundTasks,
+    user=Depends(get_current_user),
+    court_service=Depends(get_court_service)
+):
+    court_service.create(user, data, background_tasks)
+
+    return {
+        "message": "Quadra criada com sucesso"
+    }
+
+
 @router.get("/{arena_id}", response_model=list[ResponseCourt])
 def list_by_arena(
     arena_id: int,
@@ -19,19 +33,6 @@ def list_by_arena(
     court_service=Depends(get_court_service),
 ):
     return court_service.list_by_arena(user, arena_id)
-
-
-@router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-def create(
-    data: RequestCourt,
-    user=Depends(get_current_user),
-    court_service=Depends(get_court_service)
-):
-    court_service.create(user, data)
-
-    return {
-        "message": "Quadra criada com sucesso"
-    }
 
 
 @router.put("/{court_id}", response_model=MessageResponse)
