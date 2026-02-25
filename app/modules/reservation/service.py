@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, date
 from app.models.reservation import Reservation
+from app.modules.email_client.service import EmailClient
 from app.shared.enums import ReservationStatus, UserRole
 from app.shared.exceptions import BadRequestException, ForbiddenException, NotFoundException
 
@@ -14,7 +15,7 @@ class ReservationService:
         self.reservation_repo = reservation_repo
         self.schedule_service = schedule_service
 
-    def create(self, user, data):
+    def create(self, user, data, background_tasks):
         if user.role != UserRole.client:
             raise ForbiddenException("Apenas clientes podem fazer reservas")
 
@@ -44,8 +45,18 @@ class ReservationService:
             status=ReservationStatus.active,
             created_at=datetime.now(timezone.utc),
         )
+        reservation = self.reservation_repo.create(reservation)
 
-        return self.reservation_repo.create(reservation)
+        owner = schedule.court.arena.owner
+        background_tasks.add_task(
+            EmailClient.send_reservation_created,
+            owner,
+            user,
+            schedule,
+            reservation
+        )
+
+        return reservation
 
     def list_all(self):
         return self.reservation_repo.list_all()
@@ -53,7 +64,43 @@ class ReservationService:
     def list_my_reservations(self, user):
         return self.reservation_repo.list_by_client(user.id)
 
-    def cancel(self, user, reservation_id: int):
+    def list_owner_reservations(self, user):
+        if user.role != UserRole.owner:
+            raise ForbiddenException(
+                "Apenas donos podem visualizar essas reservas")
+
+        reservations = self.reservation_repo.list_by_owner(user.id)
+
+        return [
+            {
+                "id": reservation.id,
+                "status": reservation.status,
+                "created_at": reservation.created_at,
+                "cancelled_at": reservation.cancelled_at,
+                "schedule": {
+                    "id": reservation.schedule.id,
+                    "date": reservation.schedule.date,
+                    "start_time": reservation.schedule.start_time,
+                    "end_time": reservation.schedule.end_time,
+                },
+                "court": {
+                    "id": reservation.schedule.court.id,
+                    "name": reservation.schedule.court.name,
+                },
+                "arena": {
+                    "id": reservation.schedule.court.arena.id,
+                    "name": reservation.schedule.court.arena.name,
+                },
+                "client": {
+                    "id": reservation.client.id,
+                    "name": reservation.client.name,
+                    "email": reservation.client.email,
+                }
+            }
+            for reservation in reservations
+        ]
+
+    def cancel(self, user, reservation_id: int, background_tasks):
         reservation = self.reservation_repo.get_by_id(reservation_id)
 
         if not reservation:
@@ -69,4 +116,15 @@ class ReservationService:
         reservation.cancelled_at = datetime.now(timezone.utc)
         reservation.updated_at = datetime.now(timezone.utc)
 
-        return self.reservation_repo.update(reservation)
+        reservation = self.reservation_repo.update(reservation)
+
+        owner = reservation.schedule.court.arena.owner
+        background_tasks.add_task(
+            EmailClient.send_reservation_cancelled,
+            owner,
+            user,
+            reservation.schedule,
+            reservation
+        )
+
+        return reservation

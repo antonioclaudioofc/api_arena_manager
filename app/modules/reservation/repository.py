@@ -1,4 +1,7 @@
 from app.models.reservation import Reservation
+from app.models.schedule import Schedule
+from app.models.court import Court
+from app.models.arena import Arena
 from app.shared.enums import ReservationStatus
 
 
@@ -40,6 +43,16 @@ class ReservationRepository:
 
     def list_all(self):
         return self.db.query(Reservation).all()
+
+    def list_by_owner(self, owner_id):
+        return (
+            self.db.query(Reservation)
+            .join(Schedule, Schedule.id == Reservation.schedule_id)
+            .join(Court, Court.id == Schedule.court_id)
+            .join(Arena, Arena.id == Court.arena_id)
+            .filter(Arena.owner_id == owner_id)
+            .all()
+        )
 
     def update(self, reservation):
         self.db.commit()

@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Response
 from app.modules.auth.dependencies import get_current_user
 from app.modules.reservation.dependencies import get_reservation_service
-from app.schemas.reservation import RequestReservation, ResponseReservation
+from app.schemas.reservation import (
+    RequestReservation,
+    ResponseReservation,
+    ResponseOwnerReservation
+)
 from starlette import status
 
 from app.shared.schemas import MessageResponse
@@ -15,10 +19,11 @@ router = APIRouter(
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=MessageResponse)
 def create(
     data: RequestReservation,
+    background_tasks: BackgroundTasks,
     user=Depends(get_current_user),
     reservation_service=Depends(get_reservation_service),
 ):
-    reservation_service.create(user, data)
+    reservation_service.create(user, data, background_tasks)
 
     return {
         "message": "Reserva criada com sucesso"
@@ -40,12 +45,21 @@ def list_my_reservations(
     return reservation_service.list_my_reservations(user)
 
 
-@router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
-def cancel(
-    reservation_id: int,
+@router.get("/owner", response_model=list[ResponseOwnerReservation])
+def list_owner_reservations(
     user=Depends(get_current_user),
     reservation_service=Depends(get_reservation_service),
 ):
-    reservation_service.cancel(user, reservation_id)
+    return reservation_service.list_owner_reservations(user)
+
+
+@router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cancel(
+    reservation_id: int,
+    background_tasks: BackgroundTasks,
+    user=Depends(get_current_user),
+    reservation_service=Depends(get_reservation_service),
+):
+    reservation_service.cancel(user, reservation_id, background_tasks)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
