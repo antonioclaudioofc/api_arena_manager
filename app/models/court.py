@@ -1,26 +1,31 @@
 from app.core.database import Base
-from sqlalchemy import Column, DateTime, Integer, Numeric, String, ForeignKey
+
+from sqlalchemy import UUID, Column, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 
+from app.shared.models.base import ActiveMixin, SoftDeleteMixin, TimestampMixin, UUIDMixin
 
-class Court(Base):
+
+class Court(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, ActiveMixin):
     __tablename__ = "courts"
 
-    id = Column(Integer, primary_key=True, index=True)
-    arena_id = Column(Integer, ForeignKey("arenas.id", ondelete="CASCADE"))
     name = Column(String)
-    sports_type = Column(String)
-    price_per_hour = Column(Numeric)
-    description = Column(String)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    slug = Column(String, unique=True)
+    sport_type = Column(String)
+    surface_type = Column(String, default="SAND")
 
-    arena = relationship(
-        "Arena",
-        back_populates="courts"
+    price_per_hour = Column(Float)
+
+    arena_id = Column(UUID(as_uuid=True), ForeignKey("arenas.id"), index=True)
+
+    arena = relationship("Arena", back_populates="courts")
+
+    reservations = relationship(
+        "Reservation",
+        back_populates="court"
     )
-    schedules = relationship(
-        "Schedule",
-        back_populates="court",
-        cascade="all, delete"
+
+    matches = relationship(
+        "Match",
+        back_populates="court"
     )
