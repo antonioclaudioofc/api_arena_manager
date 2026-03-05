@@ -38,6 +38,12 @@ class Arena(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, ActiveMixin):
         cascade="all, delete"
     )
 
+    schedules = relationship(
+        "Schedule",
+        back_populates="arena",
+        cascade="all, delete"
+    )
+
     reservations = relationship(
         "Reservation",
         back_populates="arena"

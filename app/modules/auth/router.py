@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.modules.auth.dependencies import get_auth_service
 from app.schemas.user import RequestUser, UserLogin
@@ -13,12 +13,11 @@ router = APIRouter(
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def register(
+def register(
     payload: RequestUser,
-    background_tasks: BackgroundTasks,
     auth_service=Depends(get_auth_service)
 ):
-    await auth_service.register(payload, background_tasks)
+    auth_service.register(payload)
 
     return {
         "message": "Usuário criado com sucesso"

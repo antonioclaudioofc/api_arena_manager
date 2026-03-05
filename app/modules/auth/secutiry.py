@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
-from app.core.config import SECRET_KEY, ALGORITHM
+from app.core.config import settings
 
 
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -17,8 +17,8 @@ def create_access_token(
 
     return jwt.encode(
         to_encode,
-        SECRET_KEY,
-        algorithm=ALGORITHM
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
     )
 
 
@@ -27,6 +27,6 @@ def decode_token(
 ):
     return jwt.decode(
         token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM]
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM]
     )

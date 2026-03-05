@@ -14,7 +14,7 @@ class ArenaService:
         self.arena_repo = arena_repo
         self.user_service = user_service
 
-    def create(self, user, data, background_tasks):
+    def create(self, user, data):
 
         arena = Arena(
             **data.model_dump(),
@@ -22,7 +22,7 @@ class ArenaService:
             created_at=datetime.now(timezone.utc)
         )
 
-        self.user_service.promote_to_owner(user, arena, background_tasks)
+        self.user_service.promote_to_owner(user, arena)
 
         self.arena_repo.create(arena)
 

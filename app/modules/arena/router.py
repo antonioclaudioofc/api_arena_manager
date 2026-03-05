@@ -24,11 +24,10 @@ def list(
 @router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def create(
     data: RequestArena,
-    background_tasks: BackgroundTasks,
     user=Depends(get_current_user),
     arena_service=Depends(get_arena_service)
 ):
-    arena_service.create(user, data, background_tasks)
+    arena_service.create(user, data)
 
     return {
         "message": "Arena criada com sucesso"

@@ -19,11 +19,10 @@ router = APIRouter(
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=MessageResponse)
 def create(
     data: RequestReservation,
-    background_tasks: BackgroundTasks,
     user=Depends(get_current_user),
     reservation_service=Depends(get_reservation_service),
 ):
-    reservation_service.create(user, data, background_tasks)
+    reservation_service.create(user, data)
 
     return {
         "message": "Reserva criada com sucesso"
@@ -56,10 +55,9 @@ def list_owner_reservations(
 @router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel(
     reservation_id: int,
-    background_tasks: BackgroundTasks,
     user=Depends(get_current_user),
     reservation_service=Depends(get_reservation_service),
 ):
-    reservation_service.cancel(user, reservation_id, background_tasks)
+    reservation_service.cancel(user, reservation_id)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

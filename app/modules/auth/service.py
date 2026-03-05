@@ -1,6 +1,6 @@
 from app.modules.auth.secutiry import create_access_token
-from app.modules.email_client.service import EmailClient
-from app.shared.enums import UserRole
+from app.messaging.producer import producer
+from app.shared.enums.user import UserRole
 from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException, UsernameAlreadyExistsException
 from app.models.user import User
 from app.core.security import bcrypt_context, generate_email_verification_token, hash_password
@@ -64,12 +64,9 @@ class AuthService:
             "token_type": "bearer"
         }
 
-    async def register(self, data, background_tasks):
+    def register(self, data):
         if self.user_repo.get_by_email(data.email):
             raise EmailAlreadyExistsException()
-
-        if self.user_repo.get_by_username(data.username):
-            raise UsernameAlreadyExistsException()
 
         token = generate_email_verification_token()
 
@@ -77,17 +74,16 @@ class AuthService:
             **data.model_dump(exclude={"password"}),
             hashed_password=hash_password(data.password),
             created_at=datetime.now(timezone.utc),
-            role=UserRole.client,
+            role=UserRole.PLAYER,
             is_email_verified=False,
             email_verification_token=token
         )
 
         user = self.user_repo.create(user_model)
 
-        background_tasks.add_task(
-            EmailClient.send_verification_email,
-            user.email,
-            token
-        )
+        producer.publish_message('verification', {
+            'email': user.email,
+            'token': token
+        })
 
         return user

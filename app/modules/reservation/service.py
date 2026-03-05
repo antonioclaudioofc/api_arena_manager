@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, date
 from app.models.reservation import Reservation
-from app.modules.email_client.service import EmailClient
+from app.messaging.producer import producer
 from app.shared.enums import ReservationStatus, UserRole
 from app.shared.exceptions import BadRequestException, ForbiddenException, NotFoundException
 
@@ -48,13 +48,42 @@ class ReservationService:
         reservation = self.reservation_repo.create(reservation)
 
         owner = schedule.court.arena.owner
-        background_tasks.add_task(
-            EmailClient.send_reservation_created,
-            owner,
-            user,
-            schedule,
-            reservation
-        )
+        payload = {
+            "reservation": {
+                "id": reservation.id,
+                "status": reservation.status,
+                "date": schedule.date,
+                "start_time": schedule.start_time,
+                "end_time": schedule.end_time,
+            },
+            "arena": {
+                "id": schedule.court.arena.id,
+                "name": schedule.court.arena.name,
+            },
+            "court": {
+                "id": schedule.court.id,
+                "name": schedule.court.name,
+            },
+            "owner": {
+                "id": owner.id,
+                "name": owner.name,
+                "email": owner.email,
+            },
+            "client": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+            }
+        }
+
+        producer.publish_message('reservation_created', {
+            **payload,
+            "recipient": "owner"
+        })
+        producer.publish_message('reservation_created', {
+            **payload,
+            "recipient": "client"
+        })
 
         return reservation
 
@@ -100,7 +129,7 @@ class ReservationService:
             for reservation in reservations
         ]
 
-    def cancel(self, user, reservation_id: int, background_tasks):
+    def cancel(self, user, reservation_id: int):
         reservation = self.reservation_repo.get_by_id(reservation_id)
 
         if not reservation:
@@ -119,12 +148,45 @@ class ReservationService:
         reservation = self.reservation_repo.update(reservation)
 
         owner = reservation.schedule.court.arena.owner
-        background_tasks.add_task(
-            EmailClient.send_reservation_cancelled,
-            owner,
-            user,
-            reservation.schedule,
-            reservation
-        )
+        payload = {
+            "reservation": {
+                "id": reservation.id,
+                "status": reservation.status,
+                "date": reservation.schedule.date,
+                "start_time": reservation.schedule.start_time,
+                "end_time": reservation.schedule.end_time,
+                "cancelled_at": (
+                    reservation.cancelled_at.isoformat()
+                    if reservation.cancelled_at else None
+                )
+            },
+            "arena": {
+                "id": reservation.schedule.court.arena.id,
+                "name": reservation.schedule.court.arena.name,
+            },
+            "court": {
+                "id": reservation.schedule.court.id,
+                "name": reservation.schedule.court.name,
+            },
+            "owner": {
+                "id": owner.id,
+                "name": owner.name,
+                "email": owner.email,
+            },
+            "client": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+            }
+        }
+
+        producer.publish_message('reservation_cancelled', {
+            **payload,
+            "recipient": "owner"
+        })
+        producer.publish_message('reservation_cancelled', {
+            **payload,
+            "recipient": "client"
+        })
 
         return reservation
