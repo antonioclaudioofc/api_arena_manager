@@ -1,4 +1,5 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Response
+from fastapi import APIRouter, Depends, Response
+from uuid import UUID
 from app.modules.auth.dependencies import get_current_user
 from app.modules.reservation.dependencies import get_reservation_service
 from app.schemas.reservation import (
@@ -54,7 +55,7 @@ def list_owner_reservations(
 
 @router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel(
-    reservation_id: int,
+    reservation_id: UUID,
     user=Depends(get_current_user),
     reservation_service=Depends(get_reservation_service),
 ):

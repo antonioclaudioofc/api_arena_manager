@@ -1,7 +1,9 @@
 from datetime import datetime, timezone, date
+from uuid import UUID
 from app.models.reservation import Reservation
 from app.messaging.producer import producer
-from app.shared.enums import ReservationStatus, UserRole
+from app.shared.enums.reservation import ReservationStatus
+from app.shared.enums.user import UserRole
 from app.shared.exceptions import BadRequestException, ForbiddenException, NotFoundException
 
 
@@ -15,8 +17,8 @@ class ReservationService:
         self.reservation_repo = reservation_repo
         self.schedule_service = schedule_service
 
-    def create(self, user, data, background_tasks):
-        if user.role != UserRole.client:
+    def create(self, user, data):
+        if user.role != UserRole.PLAYER:
             raise ForbiddenException("Apenas clientes podem fazer reservas")
 
         schedule = self.schedule_service.get_by_id(data.schedule_id)
@@ -41,8 +43,8 @@ class ReservationService:
 
         reservation = Reservation(
             schedule_id=data.schedule_id,
-            client_id=user.id,
-            status=ReservationStatus.active,
+            user_id=user.id,
+            status=ReservationStatus.CONFIRMED,
             created_at=datetime.now(timezone.utc),
         )
         reservation = self.reservation_repo.create(reservation)
@@ -94,9 +96,10 @@ class ReservationService:
         return self.reservation_repo.list_by_client(user.id)
 
     def list_owner_reservations(self, user):
-        if user.role != UserRole.owner:
+        if user.role != UserRole.OWNER:
             raise ForbiddenException(
-                "Apenas donos podem visualizar essas reservas")
+                "Apenas donos podem visualizar essas reservas"
+            )
 
         reservations = self.reservation_repo.list_by_owner(user.id)
 
@@ -129,13 +132,13 @@ class ReservationService:
             for reservation in reservations
         ]
 
-    def cancel(self, user, reservation_id: int):
+    def cancel(self, user, reservation_id: UUID):
         reservation = self.reservation_repo.get_by_id(reservation_id)
 
         if not reservation:
             raise NotFoundException("Reserva não encontrada")
 
-        if (reservation.client_id != user.id):
+        if (reservation.user_id != user.id):
             raise ForbiddenException("Sem permissão")
 
         if reservation.status == ReservationStatus.cancelled:

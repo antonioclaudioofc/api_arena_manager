@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from jose import JWTError
 from app.modules.auth.service import AuthService
@@ -28,7 +29,15 @@ def get_current_user(
 ):
     try:
         payload = decode_token(token)
-        user_id = payload.get("id")
+        raw_user_id = payload.get("id")
+
+        if not raw_user_id:
+            raise UnathorizedException("Token inválido")
+
+        try:
+            user_id = UUID(str(raw_user_id))
+        except (ValueError, TypeError):
+            raise UnathorizedException("Token inválido")
 
         user = user_repo.get_by_id(user_id)
 

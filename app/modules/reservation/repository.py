@@ -2,7 +2,7 @@ from app.models.reservation import Reservation
 from app.models.schedule import Schedule
 from app.models.court import Court
 from app.models.arena import Arena
-from app.shared.enums import ReservationStatus
+from app.shared.enums.reservation import ReservationStatus
 
 
 class ReservationRepository:
@@ -29,15 +29,15 @@ class ReservationRepository:
             self.db.query(Reservation)
             .filter(
                 Reservation.schedule_id == schedule_id,
-                Reservation.status == ReservationStatus.active
+                Reservation.status == ReservationStatus.CONFIRMED
             )
             .first()
         )
 
-    def list_by_client(self, client_id):
+    def list_by_client(self, user_id):
         return (
             self.db.query(Reservation)
-            .filter(Reservation.client_id == client_id)
+            .filter(Reservation.user_id == user_id)
             .all()
         )
 

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from uuid import UUID
 from app.modules.auth.dependencies import get_current_user
 from app.modules.court.dependencies import get_court_service
 from app.schemas.court import RequestCourt, ResponseCourt, UpdateCourt
@@ -27,7 +28,7 @@ def create(
 
 @router.get("/{arena_id}", response_model=list[ResponseCourt])
 def list_by_arena(
-    arena_id: int,
+    arena_id: UUID,
     user=Depends(get_current_user),
     court_service=Depends(get_court_service),
 ):
@@ -36,7 +37,7 @@ def list_by_arena(
 
 @router.put("/{court_id}", response_model=MessageResponse)
 def update(
-    court_id: int,
+    court_id: UUID,
     data: UpdateCourt,
     user=Depends(get_current_user),
     court_service=Depends(get_court_service)
@@ -50,7 +51,7 @@ def update(
 
 @router.delete("/{court_id}", response_model=MessageResponse)
 def delete(
-    court_id: int,
+    court_id: UUID,
     user=Depends(get_current_user),
     court_service=Depends(get_court_service)
 ):

@@ -1,5 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
+from uuid import UUID
 
 from app.schemas.court import ResponseCourt
 
@@ -11,7 +12,7 @@ class BaseSchedule(BaseModel):
 
 
 class RequestSchedule(BaseSchedule):
-    court_id: int
+    court_id: UUID
     date: str
     start_time: str
     end_time: str
@@ -22,8 +23,8 @@ class UpdateSchedule(BaseSchedule):
 
 
 class ResponseSchedule(BaseSchedule):
-    id: int
-    court_id: int
+    id: UUID
+    court_id: UUID
     date: str
     start_time: str
     end_time: str
@@ -37,7 +38,7 @@ class ResponseScheduleWithAvailability(ResponseSchedule):
 
 
 class RequestScheduleBatch(BaseModel):
-    court_id: int
+    court_id: UUID
     start_date: str
     end_date: str
     start_time: str

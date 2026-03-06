@@ -11,8 +11,9 @@ class Settings(BaseSettings):
     RABBITMQ_PORT: int
     RABBITMQ_USERNAME: str
     RABBITMQ_PASSWORD: str
-    RABBITMQ_QUEUE: str
-    RABBITMQ_EXCHANGE: str
+    RABBITMQ_ARENA_MANAGER_QUEUE: str
+    RABBITMQ_ARENA_MANAGER_EXCHANGE: str
+    RABBITMQ_ARENA_MANAGER_ROUTING_KEY: str
 
     @property
     def RABBITMQ_URL(self):

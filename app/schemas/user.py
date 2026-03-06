@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from typing import Optional
+from uuid import UUID
 from app.shared.enums.user import UserRole
 from app.shared.normalizers import normalize_string
 
@@ -25,6 +26,7 @@ class UpdateUser(BaseUser):
 
 
 class ResponseUser(BaseModel):
+    id: UUID
     email: EmailStr
     name: str
     role: UserRole

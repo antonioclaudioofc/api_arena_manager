@@ -55,7 +55,6 @@ class UserService:
     def promote_to_owner(self, user, arena):
         if user.role == UserRole.PLAYER:
             user.role = UserRole.OWNER
-            user.updated_at = datetime.now(timezone.utc)
 
             producer.publish_message('owner_promotion', {
                 'user': {

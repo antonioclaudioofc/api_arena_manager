@@ -1,7 +1,7 @@
 from app.modules.auth.secutiry import create_access_token
 from app.messaging.producer import producer
 from app.shared.enums.user import UserRole
-from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException, UsernameAlreadyExistsException
+from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException
 from app.models.user import User
 from app.core.security import bcrypt_context, generate_email_verification_token, hash_password
 from datetime import datetime, timedelta, timezone
@@ -53,7 +53,7 @@ class AuthService:
         token = create_access_token(
             data={
                 "sub": user.email,
-                "id": user.id,
+                "id": str(user.id),
                 "role": user.role
             },
             expires_delta=timedelta(minutes=20)

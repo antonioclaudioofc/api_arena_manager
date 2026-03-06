@@ -1,7 +1,7 @@
 from app.core.database import Base
 
 from sqlalchemy import UUID, Column, DateTime, Numeric, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import mapped_column, relationship
+from sqlalchemy.orm import relationship
 
 from app.shared.models.base import TimestampMixin, UUIDMixin
 

@@ -1,16 +1,14 @@
-from app.schemas.user import ResponseUser
 from pydantic import ConfigDict
 from app.schemas.schedule import ResponseSchedule
-from app.schemas.court import ResponseCourt
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
-from app.shared.enums import ReservationStatus
+from app.shared.enums.reservation import ReservationStatus
 
 
 class RequestReservation(BaseModel):
-    schedule_id: int
+    schedule_id: UUID
 
 
 class UpdateReservation(BaseModel):
@@ -18,9 +16,9 @@ class UpdateReservation(BaseModel):
 
 
 class ResponseReservation(BaseModel):
-    id: int
-    schedule_id: int
-    client_id: int
+    id: UUID
+    schedule_id: UUID
+    user_id: UUID
     status: ReservationStatus
     schedule: ResponseSchedule
 
@@ -28,30 +26,30 @@ class ResponseReservation(BaseModel):
 
 
 class ResponseReservationOwnerClient(BaseModel):
-    id: int
+    id: UUID
     name: str
     email: str
 
 
 class ResponseReservationOwnerArena(BaseModel):
-    id: int
+    id: UUID
     name: str
 
 
 class ResponseReservationOwnerCourt(BaseModel):
-    id: int
+    id: UUID
     name: str
 
 
 class ResponseReservationOwnerSchedule(BaseModel):
-    id: int
+    id: UUID
     date: str
     start_time: str
     end_time: str
 
 
 class ResponseOwnerReservation(BaseModel):
-    id: int
+    id: UUID
     status: ReservationStatus
     created_at: datetime | None
     cancelled_at: datetime | None
