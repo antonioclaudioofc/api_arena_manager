@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, Response
+from uuid import UUID
 from app.modules.auth.dependencies import get_current_user
 from app.modules.reservation.dependencies import get_reservation_service
-from app.schemas.reservation import RequestReservation, ResponseReservation
+from app.schemas.reservation import (
+    RequestReservation,
+    ResponseReservation,
+    ResponseOwnerReservation
+)
 from starlette import status
 
 from app.shared.schemas import MessageResponse
@@ -40,9 +45,17 @@ def list_my_reservations(
     return reservation_service.list_my_reservations(user)
 
 
+@router.get("/owner", response_model=list[ResponseOwnerReservation])
+def list_owner_reservations(
+    user=Depends(get_current_user),
+    reservation_service=Depends(get_reservation_service),
+):
+    return reservation_service.list_owner_reservations(user)
+
+
 @router.delete("/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel(
-    reservation_id: int,
+    reservation_id: UUID,
     user=Depends(get_current_user),
     reservation_service=Depends(get_reservation_service),
 ):

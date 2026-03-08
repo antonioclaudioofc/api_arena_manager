@@ -1,10 +1,37 @@
 from app.core.database import Base
-from sqlalchemy import Column, DateTime, Integer, String, ForeignKey, Boolean, UniqueConstraint
+
+from sqlalchemy import UUID, Column, String, Numeric, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
+from app.shared.models.base import TimestampMixin, UUIDMixin
 
-class Schedule(Base):
+
+class Schedule(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "schedules"
+
+    arena_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("arenas.id"),
+        index=True
+    )
+
+    court_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("courts.id"),
+        index=True
+    )
+
+    date = Column(String, index=True)
+    start_time = Column(String, index=True)
+    end_time = Column(String)
+
+    price = Column(Numeric(10, 2))
+
+    arena = relationship("Arena", back_populates="schedules")
+    court = relationship("Court", back_populates="schedules")
+    reservation = relationship(
+        "Reservation", back_populates="schedule", uselist=False
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -12,24 +39,6 @@ class Schedule(Base):
             "date",
             "start_time",
             "end_time",
-            name="uq_court_schedule"
+            name="uq_court_schedule_range"
         ),
-    )
-
-    id = Column(Integer, primary_key=True, index=True)
-    court_id = Column(Integer, ForeignKey("courts.id", ondelete="CASCADE"))
-    date = Column(String)
-    start_time = Column(String)
-    end_time = Column(String)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
-
-    court = relationship(
-        "Court",
-        back_populates="schedules"
-    )
-    reservations = relationship(
-        "Reservation",
-        back_populates="schedule",
-        cascade="all, delete"
     )

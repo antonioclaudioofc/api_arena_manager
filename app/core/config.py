@@ -1,9 +1,20 @@
-import os
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
 
-load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-DATABASE_TEST_URL = os.getenv("DATABASE_TEST_URL")
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    SECRET_KEY: str
+    ALGORITHM: str
+    DATABASE_TEST_URL: str
+    EMAIL_API_URL: str
+    RABBITMQ_URL: str
+    RABBITMQ_ARENA_MANAGER_QUEUE: str
+    RABBITMQ_ARENA_MANAGER_EXCHANGE: str
+    RABBITMQ_ARENA_MANAGER_ROUTING_KEY: str
+
+
+    class Config:
+        env_file = ".env"
+
+
+settings = Settings()

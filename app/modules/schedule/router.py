@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from uuid import UUID
 from app.modules.auth.dependencies import get_current_user
 from app.modules.schedule.dependencies import get_schedule_service
 from app.schemas.schedule import RequestSchedule, RequestScheduleBatch, UpdateSchedule
@@ -40,7 +41,7 @@ def create_batch(
 
 @router.put("/{schedule_id}", response_model=MessageResponse)
 def update(
-    schedule_id: int,
+    schedule_id: UUID,
     data: UpdateSchedule,
     user=Depends(get_current_user),
     schedule_service=Depends(get_schedule_service),
@@ -54,7 +55,7 @@ def update(
 
 @router.delete("/{schedule_id}", response_model=MessageResponse)
 def delete(
-    schedule_id: int,
+    schedule_id: UUID,
     user=Depends(get_current_user),
     schedule_service: ScheduleService = Depends(get_schedule_service),
 ):

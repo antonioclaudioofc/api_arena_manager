@@ -1,25 +1,55 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from app.core.database import Base
+
+from sqlalchemy import UUID, Column, String, ForeignKey, Time
 from sqlalchemy.orm import relationship
 
+from app.shared.models.base import ActiveMixin, SoftDeleteMixin, TimestampMixin, UUIDMixin
 
-class Arena(Base):
+
+class Arena(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, ActiveMixin):
     __tablename__ = "arenas"
 
-    id = Column(Integer, primary_key=True, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     name = Column(String)
-    city = Column(String)
-    address = Column(String)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    slug = Column(String, unique=True)
+    description = Column(String, nullable=True)
 
-    owner = relationship(
-        "User",
-        back_populates="arenas"
+    phone = Column(String)
+    email = Column(String, nullable=True)
+
+    address = Column(String)
+    city = Column(String)
+    state = Column(String)
+    zip_code = Column(String)
+
+    opening_time = Column(Time, nullable=True)
+    closing_time = Column(Time, nullable=True)
+
+    owner_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        index=True
     )
+
+    owner = relationship("User", back_populates="arenas")
+
     courts = relationship(
         "Court",
         back_populates="arena",
         cascade="all, delete"
+    )
+
+    schedules = relationship(
+        "Schedule",
+        back_populates="arena",
+        cascade="all, delete"
+    )
+
+    reservations = relationship(
+        "Reservation",
+        back_populates="arena"
+    )
+
+    matches = relationship(
+        "Match",
+        back_populates="arena"
     )

@@ -1,6 +1,9 @@
 from datetime import datetime, timezone, date
+from uuid import UUID
 from app.models.reservation import Reservation
-from app.shared.enums import ReservationStatus, UserRole
+from app.messaging.producer import producer
+from app.shared.enums.reservation import ReservationStatus
+from app.shared.enums.user import UserRole
 from app.shared.exceptions import BadRequestException, ForbiddenException, NotFoundException
 
 
@@ -15,7 +18,7 @@ class ReservationService:
         self.schedule_service = schedule_service
 
     def create(self, user, data):
-        if user.role != UserRole.client:
+        if user.role != UserRole.PLAYER:
             raise ForbiddenException("Apenas clientes podem fazer reservas")
 
         schedule = self.schedule_service.get_by_id(data.schedule_id)
@@ -40,12 +43,51 @@ class ReservationService:
 
         reservation = Reservation(
             schedule_id=data.schedule_id,
-            client_id=user.id,
-            status=ReservationStatus.active,
+            user_id=user.id,
+            status=ReservationStatus.CONFIRMED,
             created_at=datetime.now(timezone.utc),
         )
+        reservation = self.reservation_repo.create(reservation)
 
-        return self.reservation_repo.create(reservation)
+        owner = schedule.court.arena.owner
+        payload = {
+            "reservation": {
+                "id": reservation.id,
+                "status": reservation.status,
+                "date": schedule.date,
+                "start_time": schedule.start_time,
+                "end_time": schedule.end_time,
+            },
+            "arena": {
+                "id": schedule.court.arena.id,
+                "name": schedule.court.arena.name,
+            },
+            "court": {
+                "id": schedule.court.id,
+                "name": schedule.court.name,
+            },
+            "owner": {
+                "id": owner.id,
+                "name": owner.name,
+                "email": owner.email,
+            },
+            "client": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+            }
+        }
+
+        producer.publish_message('reservation_created', {
+            **payload,
+            "recipient": "owner"
+        })
+        producer.publish_message('reservation_created', {
+            **payload,
+            "recipient": "client"
+        })
+
+        return reservation
 
     def list_all(self):
         return self.reservation_repo.list_all()
@@ -53,13 +95,50 @@ class ReservationService:
     def list_my_reservations(self, user):
         return self.reservation_repo.list_by_client(user.id)
 
-    def cancel(self, user, reservation_id: int):
+    def list_owner_reservations(self, user):
+        if user.role != UserRole.OWNER:
+            raise ForbiddenException(
+                "Apenas donos podem visualizar essas reservas"
+            )
+
+        reservations = self.reservation_repo.list_by_owner(user.id)
+
+        return [
+            {
+                "id": reservation.id,
+                "status": reservation.status,
+                "created_at": reservation.created_at,
+                "cancelled_at": reservation.cancelled_at,
+                "schedule": {
+                    "id": reservation.schedule.id,
+                    "date": reservation.schedule.date,
+                    "start_time": reservation.schedule.start_time,
+                    "end_time": reservation.schedule.end_time,
+                },
+                "court": {
+                    "id": reservation.schedule.court.id,
+                    "name": reservation.schedule.court.name,
+                },
+                "arena": {
+                    "id": reservation.schedule.court.arena.id,
+                    "name": reservation.schedule.court.arena.name,
+                },
+                "client": {
+                    "id": reservation.client.id,
+                    "name": reservation.client.name,
+                    "email": reservation.client.email,
+                }
+            }
+            for reservation in reservations
+        ]
+
+    def cancel(self, user, reservation_id: UUID):
         reservation = self.reservation_repo.get_by_id(reservation_id)
 
         if not reservation:
             raise NotFoundException("Reserva não encontrada")
 
-        if (reservation.client_id != user.id):
+        if (reservation.user_id != user.id):
             raise ForbiddenException("Sem permissão")
 
         if reservation.status == ReservationStatus.cancelled:
@@ -69,4 +148,48 @@ class ReservationService:
         reservation.cancelled_at = datetime.now(timezone.utc)
         reservation.updated_at = datetime.now(timezone.utc)
 
-        return self.reservation_repo.update(reservation)
+        reservation = self.reservation_repo.update(reservation)
+
+        owner = reservation.schedule.court.arena.owner
+        payload = {
+            "reservation": {
+                "id": reservation.id,
+                "status": reservation.status,
+                "date": reservation.schedule.date,
+                "start_time": reservation.schedule.start_time,
+                "end_time": reservation.schedule.end_time,
+                "cancelled_at": (
+                    reservation.cancelled_at.isoformat()
+                    if reservation.cancelled_at else None
+                )
+            },
+            "arena": {
+                "id": reservation.schedule.court.arena.id,
+                "name": reservation.schedule.court.arena.name,
+            },
+            "court": {
+                "id": reservation.schedule.court.id,
+                "name": reservation.schedule.court.name,
+            },
+            "owner": {
+                "id": owner.id,
+                "name": owner.name,
+                "email": owner.email,
+            },
+            "client": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+            }
+        }
+
+        producer.publish_message('reservation_cancelled', {
+            **payload,
+            "recipient": "owner"
+        })
+        producer.publish_message('reservation_cancelled', {
+            **payload,
+            "recipient": "client"
+        })
+
+        return reservation

@@ -5,14 +5,24 @@ from sqlalchemy.exc import StatementError
 
 from app.core.database import engine, Base
 from app.core.exception_handlers import http_exception_handler, sql_exception_handler, validation_exception_handler
+
+from app.models.arena import Arena
+from app.models.court import Court
+from app.models.match import Match
+from app.models.match_participant import MatchParticipant
+from app.models.payment import Payment
+from app.models.reservation import Reservation
+from app.models.schedule import Schedule
+from app.models.user import User
+
+from app.modules.arena.router import router as arena_router
 from app.modules.auth.router import router as auth_router
 from app.modules.user.router import router as user_router
-from app.modules.arena.router import router as arena_router
-from app.modules.court.router import router as court_router
-from app.modules.schedule.router import router as schedule_router
-from app.modules.reservation.router import router as reservation_router
 from app.modules.catalog.router import router as catalog_router
-
+from app.modules.court.router import router as court_router
+from app.modules.reservation.router import router as reservation_router
+from app.modules.schedule.router import router as schedule_router
+from app.modules.user.router import router as user_router
 
 app = FastAPI(title="Arena Manager")
 

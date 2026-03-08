@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
-from app.shared.enums import UserRole
+from app.messaging.producer import producer
+from app.shared.enums.user import UserRole
 from app.shared.exceptions import (
     EmailAlreadyExistsException,
     ForbiddenException,
@@ -51,10 +52,21 @@ class UserService:
     def delete(self, user):
         self.user_repo.delete(user)
 
-    def promote_to_owner(self, user):
-        if user.role == UserRole.client:
-            user.role = UserRole.owner
-            user.updated_at = datetime.now(timezone.utc)
+    def promote_to_owner(self, user, arena):
+        if user.role == UserRole.PLAYER:
+            user.role = UserRole.OWNER
+
+            producer.publish_message('owner_promotion', {
+                'user': {
+                    'id': user.id,
+                    'name': user.name,
+                    'email': user.email,
+                },
+                'arena': {
+                    'id': arena.id,
+                    'name': arena.name,
+                }
+            })
 
             self.user_repo.update(user)
 

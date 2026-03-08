@@ -1,4 +1,10 @@
 __pycache__
 .venv
+.pytest_cache
+__pycache__
 .env
-API_DOCUMENTATION.md
+.env.*
+*.pyc
+database.db
+database_*.db
+venv/

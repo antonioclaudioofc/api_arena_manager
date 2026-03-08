@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from uuid import UUID
 
 from app.modules.arena.dependencies import get_arena_service
 from app.modules.auth.dependencies import get_current_user
@@ -36,7 +37,7 @@ def create(
 
 @router.put("/{arena_id}", response_model=MessageResponse)
 def update(
-    arena_id: int,
+    arena_id: UUID,
     data: UpdateArena,
     user=Depends(get_current_user),
     arena_service=Depends(get_arena_service),
@@ -50,7 +51,7 @@ def update(
 
 @router.delete("/{arena_id}", response_model=MessageResponse)
 def delete(
-    arena_id: int,
+    arena_id: UUID,
     user=Depends(get_current_user),
     arena_service=Depends(get_arena_service)
 ):

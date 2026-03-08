@@ -1,6 +1,7 @@
 from app.models.reservation import Reservation
 from app.models.schedule import Schedule
 from sqlalchemy.orm import aliased
+from app.shared.enums.reservation import ReservationStatus
 
 
 class ScheduleRepository:
@@ -29,7 +30,7 @@ class ScheduleRepository:
     def list_by_court(self, court_id):
         return (
             self.db.query(Schedule)
-            .filter(Schedule.id == court_id)
+            .filter(Schedule.court_id == court_id)
             .all()
         )
 
@@ -47,14 +48,14 @@ class ScheduleRepository:
         )
 
     def list_with_availability(self, court_id):
-        reservation_alisas = aliased(Reservation)
+        reservation_alias = aliased(Reservation)
 
         return (
-            self.db.query(Schedule, reservation_alisas.id)
+            self.db.query(Schedule, reservation_alias.id)
             .outerjoin(
-                reservation_alisas,
-                (reservation_alisas.schedule_id == Schedule.id)
-                & (reservation_alisas.status == "active")
+                reservation_alias,
+                (reservation_alias.schedule_id == Schedule.id)
+                & (reservation_alias.status == ReservationStatus.CONFIRMED)
             )
             .filter(Schedule.court_id == court_id)
             .all()

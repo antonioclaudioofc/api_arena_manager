@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from uuid import UUID
 from app.modules.arena.dependencies import get_arena_service
 from app.modules.court.dependencies import get_court_service
 from app.modules.schedule.dependencies import get_schedule_service
@@ -21,7 +22,7 @@ def list_arenas(
 
 @router.get("/arenas/{arena_id}", response_model=ResponseArena)
 def get_arena(
-    arena_id: int,
+    arena_id: UUID,
     arena_service=Depends(get_arena_service)
 ):
     arena = arena_service.get_by_id(arena_id)
@@ -32,7 +33,7 @@ def get_arena(
 
 @router.get("/arenas/{arena_id}/courts", response_model=list[ResponseCourt])
 def list_courts_by_arena(
-    arena_id: int,
+    arena_id: UUID,
     court_service=Depends(get_court_service),
     arena_service=Depends(get_arena_service)
 ):
@@ -45,7 +46,7 @@ def list_courts_by_arena(
 
 @router.get("/courts/{court_id}/schedules", response_model=list[dict])
 def list_available_schedules(
-    court_id: int,
+    court_id: UUID,
     schedule_service=Depends(get_schedule_service),
     court_service=Depends(get_court_service)
 ):
