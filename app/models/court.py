@@ -25,6 +25,11 @@ class Court(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, ActiveMixin):
         back_populates="court"
     )
 
+    schedules = relationship(
+        "Schedule",
+        back_populates="court"
+    )
+
     matches = relationship(
         "Match",
         back_populates="court"

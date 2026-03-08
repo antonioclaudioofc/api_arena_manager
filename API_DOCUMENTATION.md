@@ -1,865 +1,1249 @@
-# API Arena Manager - Documentação
+# API Arena Manager - Documentacao Completa
 
-## Índice
-- [Autenticação](#autenticação)
-- [Usuário](#usuário)
-- [Arenas](#arenas)
-- [Quadras](#quadras)
-- [Horários](#horários)
-- [Reservas](#reservas)
-- [Catálogo (Público)](#catálogo-público)
-- [Códigos de Status HTTP](#códigos-de-status-http)
-- [Tipos e Enums](#tipos-e-enums)
+## 1. Visao geral
 
----
+- Nome da API: `Arena Manager`
+- Framework: `FastAPI`
+- Titulo OpenAPI: `Arena Manager`
+- Endpoint raiz: `GET /`
+- Resposta da raiz:
 
-## Autenticação
+```json
+{
+  "message": "Welcome to the Arena Manager API"
+}
+```
+
+## 2. Autenticacao
+
+A API usa Bearer Token JWT.
+
+- Header esperado:
+
+```http
+Authorization: Bearer <token>
+```
+
+- O token e emitido em `POST /auth/login`.
+- Expiracao atual do token: `20 minutos`.
+
+## 3. Formato padrao de respostas
+
+### 3.1 Sucesso com mensagem
+
+Schema `MessageResponse`:
+
+```json
+{
+  "message": "string"
+}
+```
+
+### 3.2 Erro de regra de negocio
+
+`HTTPException` customizada retorna:
+
+```json
+{
+  "message": "string"
+}
+```
+
+### 3.3 Erro de validacao de entrada
+
+Para erros de validacao (Pydantic/FastAPI), a API retorna `400`:
+
+```json
+{
+  "message": "Dados invalidos",
+  "fields": {
+    "campo": "descricao do erro"
+  }
+}
+```
+
+### 3.4 Erro SQL/enum
+
+Quando ocorre erro de enum no banco, retorna `400`:
+
+```json
+{
+  "message": "valor invalido para um dos campos",
+  "fiels": {
+    "role": "Use apenas: admin ou client"
+  }
+}
+```
+
+Observacao: o campo esta escrito como `fiels` no codigo atual.
+
+### 3.5 Erro interno
+
+```json
+{
+  "message": "Erro interno no servidor"
+}
+```
+
+## 4. Endpoints
+
+## 4.1 Auth (`/auth`)
 
 ### POST `/auth/register`
-Registra um novo usuário no sistema.
 
-**Request Body:**
+Cria usuario e publica evento de verificacao de e-mail.
+
+Auth: nao requer
+
+Request body (`RequestUser`):
+
 ```json
 {
-  "name": "string",
-  "username": "string",
-  "email": "user@example.com",
-  "password": "string" // mínimo 6 caracteres
+  "name": "Joao Silva",
+  "email": "joao@exemplo.com",
+  "password": "123456"
 }
 ```
 
-**Response:** `201 Created`
+Regras:
+- `password` minimo 6 caracteres
+- `email` unico
+- usuario e criado com role `player`
+- `is_email_verified` inicia como `false`
+
+Response:
+- `201 Created`
+
 ```json
 {
-  "message": "Usuário criado com sucesso"
+  "message": "Usuario criado com sucesso"
 }
 ```
 
-**Erros:**
-- `409 Conflict` - E-mail já cadastrado
-- `409 Conflict` - Username já cadastrado
-- `422 Unprocessable Entity` - Validação falhou (username com espaços, password muito curto, etc)
-
-**Notas:**
-- Username não pode conter espaços
-- Usuário é criado com role `client` por padrão
-- Campos são normalizados automaticamente (trim)
+Possiveis erros:
+- `409` `{"message": "E-mail ja cadastrado"}`
+- `400` erro de validacao de body
 
 ---
 
 ### POST `/auth/login`
-Autentica um usuário e retorna token de acesso.
 
-**Request Body:** (Form Data)
-```
-username: string
-password: string
-```
+Autentica usuario e retorna JWT.
 
-**Response:** `200 OK`
+Auth: nao requer
+
+Request: `application/x-www-form-urlencoded`
+
+Campos:
+- `username`: recebe o e-mail
+- `password`: senha
+
+Response:
+- `200 OK`
+
 ```json
 {
-  "access_token": "string",
+  "access_token": "<jwt>",
   "token_type": "bearer"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Usuário inexistente
-- `401 Unauthorized` - Usuário ou senha inválida
-
-**Notas:**
-- Token expira em 20 minutos
-- Use o token no header: `Authorization: Bearer {token}`
+Possiveis erros:
+- `401` `{"message": "Usuario inexistente"}`
+- `401` `{"message": "Usuario ou senha invalida"}`
+- `401` `{"message": "E-mail nao verificado"}`
 
 ---
 
-## Usuário
+### GET `/auth/verify-email?token=<token>`
 
-### GET `/user/me`
-Retorna o perfil do usuário autenticado.
+Verifica e-mail por token e responde HTML.
 
-**Autenticação:** Requerida
+Auth: nao requer
 
-**Response:** `200 OK`
+Response:
+- `200 OK` (`text/html`) pagina de sucesso
+
+Possiveis erros:
+- `401` (`text/html`) pagina de falha com mensagem de token invalido
+
+---
+
+### POST `/auth/forgot-password`
+
+Solicita recuperacao de senha.
+
+Auth: nao requer
+
+Request body (`ForgotPasswordRequest`):
+
 ```json
 {
-  "email": "user@example.com",
-  "username": "string",
-  "name": "string",
-  "role": "client" | "owner" | "admin"
+  "email": "usuario@dominio.com"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido ou ausente
+Comportamento:
+- Se o e-mail existir:
+- gera `reset_password_token`
+- define expiracao em `1 hora`
+- publica evento `password_reset`
+- Se nao existir: retorna mesma resposta para nao vazar existencia
+
+Response:
+- `200 OK`
+
+```json
+{
+  "message": "Enviado as instrucoes de recuperacao para o e-mail."
+}
+```
+
+---
+
+### POST `/auth/reset-password`
+
+Reseta senha via JSON usando token.
+
+Auth: nao requer
+
+Request body (`ResetPasswordRequest`):
+
+```json
+{
+  "token": "token-de-reset",
+  "new_password": "novaSenha123"
+}
+```
+
+Regras:
+- `new_password` minimo 6 caracteres
+- token precisa existir e nao estar expirado
+
+Response:
+- `200 OK`
+
+```json
+{
+  "message": "Senha redefinida com sucesso"
+}
+```
+
+Possiveis erros:
+- `401` `{"message": "Token invalido"}`
+- `401` `{"message": "Token expirado"}`
+- `400` erro de validacao do body
+
+---
+
+### GET `/auth/reset-password?token=<token>`
+
+Abre pagina HTML com formulario de nova senha.
+
+Auth: nao requer
+
+Response:
+- `200 OK` (`text/html`) formulario
+
+Possiveis erros:
+- `401` (`text/html`) pagina de link invalido/expirado
+
+---
+
+### POST `/auth/reset-password-form`
+
+Submete formulario HTML para redefinir senha.
+
+Auth: nao requer
+
+Request: `application/x-www-form-urlencoded`
+
+Campos:
+- `token`: string
+- `new_password`: string (minimo 6)
+
+Response:
+- `200 OK` (`text/html`) pagina de sucesso
+
+Possiveis erros:
+- `400` (`text/html`) senha invalida
+- `401` (`text/html`) token invalido/expirado
+
+## 4.2 User (`/user`)
+
+### GET `/user/me`
+
+Retorna usuario autenticado.
+
+Auth: requer Bearer
+
+Response (`ResponseUser`):
+- `200 OK`
+
+```json
+{
+  "id": "uuid",
+  "email": "user@dominio.com",
+  "name": "Nome",
+  "role": "player"
+}
+```
+
+Possiveis erros:
+- `401` token invalido/ausente
+- `401` usuario do token nao encontrado
 
 ---
 
 ### PUT `/user/me`
-Atualiza o perfil do usuário autenticado.
 
-**Autenticação:** Requerida
+Atualiza perfil.
 
-**Request Body:**
+Auth: requer Bearer
+
+Request body (`UpdateUser`):
+
 ```json
 {
-  "name": "string", // opcional
-  "username": "string", // opcional
-  "email": "user@example.com" // opcional
+  "name": "Novo Nome",
+  "email": "novo@dominio.com"
 }
 ```
 
-**Response:** `200 OK`
+Todos os campos sao opcionais.
+
+Response:
+- `200 OK`
+
 ```json
 {
   "message": "Perfil atualizado com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `409 Conflict` - E-mail já cadastrado
-- `409 Conflict` - Username já cadastrado
-- `422 Unprocessable Entity` - Username com espaços
-
-**Notas:**
-- Todos os campos são opcionais
-- Apenas os campos enviados serão atualizados
+Possiveis erros:
+- `409` e-mail ja cadastrado
+- `409` username ja cadastrado (regra existente no servico)
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### PUT `/user/change-password`
-Altera a senha do usuário autenticado.
 
-**Autenticação:** Requerida
+Troca senha do usuario logado.
 
-**Request Body:**
+Auth: requer Bearer
+
+Request body (`UserVerification`):
+
 ```json
 {
-  "password": "string",
-  "new_password": "string" // mínimo 6 caracteres
+  "password": "senhaAtual",
+  "new_password": "novaSenha123"
 }
 ```
 
-**Response:** `200 OK`
+Regras:
+- `new_password` minimo 6
+- senha atual deve estar correta
+- nova senha deve ser diferente da atual
+
+Response:
+- `200 OK`
+
 ```json
 {
   "message": "Senha atualizado com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Senha atual incorreta
-- `403 Forbidden` - A nova senha deve ser diferente da atual
-- `422 Unprocessable Entity` - Nova senha muito curta
+Possiveis erros:
+- `403` senha atual incorreta
+- `403` nova senha igual a atual
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### DELETE `/user/account`
-Deleta a conta do usuário autenticado.
 
-**Autenticação:** Requerida
+Remove conta do usuario autenticado.
 
-**Response:** `200 OK`
+Auth: requer Bearer
+
+Response:
+- `200 OK`
+
 ```json
 {
   "message": "Conta deletada com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
+Possiveis erros:
+- `401` token invalido/ausente
 
----
+## 4.3 Arenas (`/arenas`)
 
-## Arenas
+Todos endpoints requerem Bearer.
 
 ### GET `/arenas/`
-Lista todas as arenas do usuário autenticado.
 
-**Autenticação:** Requerida (Owner)
+Lista arenas do usuario.
 
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "owner_id": 1,
-    "name": "Arena Central",
-    "city": "São Paulo",
-    "address": "Rua Exemplo, 123"
-  }
-]
-```
+Response (`list[ResponseArena]`):
+- `200 OK`
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Usuário não possui arenas
-
-**Notas:**
-- Retorna apenas arenas do owner autenticado
+Possiveis erros:
+- `403` `{"message": "Usuario nao possui arenas"}`
+- `401` token invalido/ausente
 
 ---
 
 ### POST `/arenas/`
-Cria uma nova arena.
 
-**Autenticação:** Requerida
+Cria arena.
 
-**Request Body:**
+Request body (`RequestArena`):
+
 ```json
 {
-  "name": "string",
-  "city": "string",
-  "address": "string"
+  "name": "Arena Centro",
+  "description": "Opcional",
+  "phone": "11999999999",
+  "email": "arena@dominio.com",
+  "city": "Sao Paulo",
+  "address": "Rua X, 123",
+  "state": "SP",
+  "zip_code": "01000-000",
+  "opening_time": "08:00:00",
+  "closing_time": "22:00:00"
 }
 ```
 
-**Response:** `201 Created`
+Obrigatorios:
+- `name`, `phone`, `city`, `address`, `state`, `zip_code`
+
+Response:
+- `201 Created`
+
 ```json
 {
   "message": "Arena criada com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `422 Unprocessable Entity` - Campos obrigatórios ausentes
-
-**Notas:**
-- Usuário é automaticamente promovido a `owner` ao criar primeira arena
-- Campos são normalizados automaticamente
+Possiveis erros:
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### PUT `/arenas/{arena_id}`
-Atualiza uma arena existente.
 
-**Autenticação:** Requerida (Owner da arena)
+Atualiza arena.
 
-**Request Body:**
-```json
-{
-  "name": "string", // opcional
-  "city": "string", // opcional
-  "address": "string" // opcional
-}
-```
+Request body (`UpdateArena`): todos opcionais.
 
-**Response:** `200 OK`
+Response:
+- `200 OK`
+
 ```json
 {
   "message": "Arena atualizada com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão (não é o dono)
-- `404 Not Found` - Arena não encontrada
-
-**Notas:**
-- Todos os campos são opcionais
-- Apenas o dono pode atualizar
+Possiveis erros:
+- `404` arena nao encontrada
+- `403` sem permissao
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### DELETE `/arenas/{arena_id}`
-Deleta uma arena.
 
-**Autenticação:** Requerida (Owner da arena)
+Remove arena.
 
-**Response:** `200 OK`
+Response:
+- `200 OK`
+
 ```json
 {
   "message": "Arena deletada com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão (não é o dono)
-- `404 Not Found` - Arena não encontrada
+Possiveis erros:
+- `404` arena nao encontrada
+- `403` sem permissao
+- `401` token invalido/ausente
 
-**Notas:**
-- Apenas o dono pode deletar
-- Deleta em cascata todas as quadras, horários e reservas relacionadas
+## 4.4 Courts (`/courts`)
 
----
-
-## Quadras
-
-### GET `/courts/{arena_id}`
-Lista todas as quadras de uma arena específica.
-
-**Autenticação:** Requerida (Owner da arena)
-
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "name": "Quadra 1",
-    "arena_id": 1,
-    "sports_type": "Futebol",
-    "price_per_hour": 100.0
-  }
-]
-```
-
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão (não é o dono da arena)
-
----
+Todos endpoints requerem Bearer.
 
 ### POST `/courts/`
-Cria uma nova quadra.
 
-**Autenticação:** Requerida (Owner da arena)
+Cria quadra.
 
-**Request Body:**
+Request body (`RequestCourt`):
+
 ```json
 {
-  "arena_id": 1,
-  "name": "string",
-  "sports_type": "string",
-  "price_per_hour": 100.50
+  "arena_id": "uuid",
+  "name": "Quadra 1",
+  "sport_type": "futsal",
+  "surface_type": "sintetico",
+  "price_per_hour": 120.50
 }
 ```
 
-**Response:** `201 Created`
+Obrigatorios:
+- `arena_id`, `name`, `sport_type`, `price_per_hour`
+
+Response:
+- `201 Created`
+
 ```json
 {
   "message": "Quadra criada com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão (não é dono da arena)
-- `404 Not Found` - Arena não encontrada
-- `422 Unprocessable Entity` - Campos obrigatórios ausentes
+Possiveis erros:
+- `404` arena nao encontrada
+- `403` sem permissao
+- `400` validacao
+- `401` token invalido/ausente
 
-**Notas:**
-- Apenas o dono da arena pode criar quadras
-- Campos são normalizados automaticamente
+---
+
+### GET `/courts/{arena_id}`
+
+Lista quadras da arena do dono autenticado.
+
+Response (`list[ResponseCourt]`):
+- `200 OK`
+
+Possiveis erros:
+- `403` sem permissao
+- `401` token invalido/ausente
 
 ---
 
 ### PUT `/courts/{court_id}`
-Atualiza uma quadra existente.
 
-**Autenticação:** Requerida (Owner da arena)
+Atualiza quadra.
 
-**Request Body:**
-```json
-{
-  "name": "string", // opcional
-  "sports_type": "string", // opcional
-  "price_per_hour": 100.50 // opcional
-}
-```
+Request body (`UpdateCourt`): campos opcionais.
 
-**Response:** `200 OK`
+Response:
+- `200 OK`
+
 ```json
 {
   "message": "Quadra atualizada com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão para editar esta quadra
-- `404 Not Found` - Quadra não encontrada
-- `404 Not Found` - Arena não encontrada
-
-**Notas:**
-- Todos os campos são opcionais
-- Apenas o dono da arena pode atualizar
+Possiveis erros:
+- `404` quadra nao encontrada
+- `404` arena nao encontrada
+- `403` sem permissao para editar
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### DELETE `/courts/{court_id}`
-Deleta uma quadra.
 
-**Autenticação:** Requerida (Owner da arena)
+Remove quadra.
 
-**Response:** `200 OK`
+Response:
+- `200 OK`
+
 ```json
 {
   "message": "Quadra deletada com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão para remover esta quadra
-- `404 Not Found` - Quadra não encontrada
-- `404 Not Found` - Arena não encontrada
+Possiveis erros:
+- `404` quadra nao encontrada
+- `404` arena nao encontrada
+- `403` sem permissao para remover
+- `401` token invalido/ausente
 
-**Notas:**
-- Apenas o dono da arena pode deletar
-- Deleta em cascata todos os horários e reservas relacionadas
+## 4.5 Schedules (`/schedules`)
 
----
-
-## Horários
+Todos endpoints requerem Bearer.
 
 ### POST `/schedules/`
-Cria um novo horário disponível.
 
-**Autenticação:** Requerida (Owner da arena)
+Cria um horario.
 
-**Request Body:**
+Request body (`RequestSchedule`):
+
 ```json
 {
-  "court_id": 1,
-  "date": "2026-01-27",
-  "start_time": "10:00",
-  "end_time": "11:00"
+  "court_id": "uuid",
+  "date": "2026-03-10",
+  "start_time": "09:00",
+  "end_time": "10:00"
 }
 ```
 
-**Response:** `201 Created`
+Response:
+- `201 Created`
+
 ```json
 {
-  "message": "Horário criado com sucesso"
+  "message": "Horario criado com sucesso"
 }
 ```
 
-**Erros:**
-- `400 Bad Request` - Não é possível criar horários para datas no passado
-- `400 Bad Request` - Horário inicial deve ser menor que o horário final
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão (não é dono da arena)
-- `404 Not Found` - Quadra não encontrada
-- `422 Unprocessable Entity` - Campos obrigatórios ausentes
-
-**Notas:**
-- Apenas o dono da arena pode criar horários
-- Formato de data: `YYYY-MM-DD`
-- Formato de hora: `HH:MM`
-- Não é possível criar horários em datas passadas
-- Hora inicial (start_time) deve ser menor que a hora final (end_time)
+Possiveis erros:
+- `404` quadra nao encontrada
+- `403` sem permissao
+- `400` data no passado
+- `400` horario inicial >= final
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### POST `/schedules/batch`
-Cria múltiplos horários de uma vez.
 
-**Autenticação:** Requerida (Owner da arena)
+Cria horarios em lote.
 
-**Request Body:**
+Request body (`RequestScheduleBatch`):
+
 ```json
 {
-  "court_id": 1,
-  "start_date": "2026-01-27",
-  "end_date": "2026-01-31",
+  "court_id": "uuid",
+  "start_date": "2026-03-10",
+  "end_date": "2026-03-20",
   "start_time": "08:00",
-  "end_time": "20:00",
+  "end_time": "12:00",
   "interval_minutes": 60,
   "weekdays": [0, 1, 2, 3, 4]
 }
 ```
 
-**Response:** `201 Created`
+Notas:
+- `weekdays` usa padrao Python: `0=segunda` ... `6=domingo`
+- se `weekdays` vazio, usa todos os dias
+
+Response:
+- `201 Created`
+
 ```json
 {
-  "message": "Horários criados com sucesso"
+  "message": "Horarios criados com sucesso"
 }
 ```
 
-**Erros:**
-- `400 Bad Request` - Intervalo inválido (menor ou igual a 0)
-- `400 Bad Request` - Horário inicial deve ser menor que o final
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão
-- `404 Not Found` - Quadra não encontrada
-- `409 Conflict` - Horário já existente
-
-**Notas:**
-- Cria horários automaticamente no intervalo de datas especificado e nos dias da semana definidos
-- Weekdays: 0=Segunda, 1=Terça, ..., 6=Domingo
-- Se `weekdays` estiver vazio, horários serão criados para todos os dias da semana
-- Os meses são automaticamente determinados pelo intervalo de datas (start_date até end_date)
-- Data inicial não pode ser no passado
-- Data final deve ser maior ou igual à data inicial
-- Horário inicial (start_time) deve ser menor que o horário final (end_time)
+Possiveis erros:
+- `404` quadra nao encontrada
+- `403` sem permissao
+- `400` intervalo invalido
+- `400` data inicial no passado
+- `400` data final menor que inicial
+- `400` horario inicial >= final
+- `409` conflito de horario existente
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### PUT `/schedules/{schedule_id}`
-Atualiza um horário existente.
 
-**Autenticação:** Requerida (Owner da arena)
+Atualiza horario.
 
-**Request Body:**
+Request body (`UpdateSchedule`): todos opcionais.
+
+Response:
+- `200 OK`
+
 ```json
 {
-  "date": "2026-01-28", // opcional
-  "start_time": "10:00", // opcional
-  "end_time": "11:00" // opcional
+  "message": "Horario atualizado com sucesso"
 }
 ```
 
-**Response:** `200 OK`
-```json
-{
-  "message": "Horário atualizado com sucesso"
-}
-```
-
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão
-- `404 Not Found` - Horário não encontrado
-
-**Notas:**
-- Todos os campos são opcionais
-- Apenas o dono da arena pode atualizar
+Possiveis erros:
+- `404` horario nao encontrado
+- `403` sem permissao
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### DELETE `/schedules/{schedule_id}`
-Deleta um horário.
 
-**Autenticação:** Requerida (Owner da arena)
+Remove horario.
 
-**Response:** `200 OK`
+Response:
+- `200 OK`
+
 ```json
 {
-  "message": "Horário deletado com sucesso"
+  "message": "Horario deletado com sucesso"
 }
 ```
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão
-- `404 Not Found` - Horário não encontrado
+Possiveis erros:
+- `404` horario nao encontrado
+- `403` sem permissao
+- `401` token invalido/ausente
 
-**Notas:**
-- Apenas o dono da arena pode deletar
-- Deleta em cascata reservas relacionadas
-
----
-
-## Reservas
+## 4.6 Reservations (`/reservations`)
 
 ### POST `/reservations/`
-Cria uma nova reserva.
 
-**Autenticação:** Requerida (Client)
+Cria reserva.
 
-**Request Body:**
+Auth: requer Bearer
+
+Request body (`RequestReservation`):
+
 ```json
 {
-  "schedule_id": 1
+  "schedule_id": "uuid"
 }
 ```
 
-**Response:** `201 Created`
+Regras:
+- apenas usuario `player` pode reservar
+- horario deve existir
+- horario nao pode ser passado
+- horario nao pode estar confirmado por outra reserva
+
+Response:
+- `201 Created`
+
 ```json
 {
   "message": "Reserva criada com sucesso"
 }
 ```
 
-**Erros:**
-- `400 Bad Request` - Não é possível reservar horários passados
-- `400 Bad Request` - Horário já está reservado
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Apenas clientes podem fazer reservas
-- `404 Not Found` - Horário não encontrado
-- `422 Unprocessable Entity` - schedule_id ausente
-
-**Notas:**
-- Apenas usuários com role `client` podem criar reservas
-- Não é possível reservar horários no passado (data < hoje)
-- Apenas um cliente pode reservar cada horário
+Possiveis erros:
+- `403` apenas clientes podem reservar
+- `404` horario nao encontrado
+- `400` horario passado
+- `400` horario ja reservado
+- `400` validacao
+- `401` token invalido/ausente
 
 ---
 
 ### GET `/reservations/`
-Lista todas as reservas do sistema.
 
-**Autenticação:** Não requerida
+Lista todas as reservas.
 
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "schedule_id": 1,
-    "client_id": 1,
-    "status": "active",
-    "created_at": "2026-01-26T10:00:00Z"
-  }
-]
-```
+Auth: nao requer (no codigo atual)
 
-**Notas:**
-- Endpoint público
-- Retorna todas as reservas do sistema
+Response:
+- `200 OK`
+- formato: lista de objetos `Reservation` (sem response_model explicito)
 
 ---
 
 ### GET `/reservations/me`
-Lista todas as reservas do usuário autenticado.
 
-**Autenticação:** Requerida
+Lista reservas do usuario autenticado.
 
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "schedule_id": 1,
-    "client_id": 1,
-    "status": "active",
-    "created_at": "2026-01-26T10:00:00Z"
-  }
-]
-```
+Auth: requer Bearer
 
-**Erros:**
-- `401 Unauthorized` - Token inválido
+Response (`list[ResponseReservation]`):
+- `200 OK`
 
-**Notas:**
-- Retorna apenas reservas do usuário autenticado
+---
+
+### GET `/reservations/owner`
+
+Lista reservas das arenas do owner autenticado.
+
+Auth: requer Bearer
+
+Response (`list[ResponseOwnerReservation]`):
+- `200 OK`
+
+Possiveis erros:
+- `403` apenas donos podem visualizar
+- `401` token invalido/ausente
 
 ---
 
 ### DELETE `/reservations/{reservation_id}`
-Cancela uma reserva (muda status para cancelled).
 
-**Autenticação:** Requerida (Client dono da reserva)
+Cancela reserva.
 
-**Response:** `204 No Content`
+Auth: requer Bearer
 
-**Erros:**
-- `400 Bad Request` - Reserva já cancelada
-- `401 Unauthorized` - Token inválido
-- `403 Forbidden` - Sem permissão (não é o dono da reserva)
-- `404 Not Found` - Reserva não encontrada
+Response:
+- `204 No Content`
 
-**Notas:**
-- Apenas o cliente que fez a reserva pode cancelar
-- Cancelamento muda o status para `cancelled` e registra `cancelled_at`
-- Retorna HTTP 204 sem corpo
+Possiveis erros:
+- `404` reserva nao encontrada
+- `403` sem permissao
+- `400` reserva ja cancelada
+- `401` token invalido/ausente
 
----
+## 4.7 Catalog (`/catalog`)
 
-## Catálogo (Público)
-
-Endpoints acessíveis sem autenticação para consultar arenas, quadras e horários disponíveis.
+Endpoints publicos de consulta.
 
 ### GET `/catalog/arenas`
-Lista todas as arenas disponíveis no sistema.
 
-**Autenticação:** Não requerida
+Lista todas as arenas.
 
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "owner_id": 1,
-    "name": "Arena Central",
-    "city": "São Paulo",
-    "address": "Rua Exemplo, 123"
-  }
-]
-```
-
-**Notas:**
-- Endpoint público - sem autenticação necessária
-- Retorna todas as arenas cadastradas no sistema
+Response (`list[ResponseArena]`):
+- `200 OK`
 
 ---
 
 ### GET `/catalog/arenas/{arena_id}`
-Retorna detalhes de uma arena específica.
 
-**Autenticação:** Não requerida
+Retorna arena por id.
 
-**Response:** `200 OK`
-```json
-{
-  "id": 1,
-  "owner_id": 1,
-  "name": "Arena Central",
-  "city": "São Paulo",
-  "address": "Rua Exemplo, 123"
-}
-```
+Response (`ResponseArena`):
+- `200 OK`
 
-**Erros:**
-- `404 Not Found` - Arena não encontrada
-
-**Notas:**
-- Endpoint público - sem autenticação necessária
+Possiveis erros:
+- `404` arena nao encontrada
 
 ---
 
 ### GET `/catalog/arenas/{arena_id}/courts`
-Lista todas as quadras de uma arena específica.
 
-**Autenticação:** Não requerida
+Lista quadras da arena.
 
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "name": "Quadra 1",
-    "arena_id": 1,
-    "sports_type": "Futebol",
-    "price_per_hour": 100.0
-  }
-]
-```
+Response (`list[ResponseCourt]`):
+- `200 OK`
 
-**Erros:**
-- `404 Not Found` - Arena não encontrada
-
-**Notas:**
-- Endpoint público - sem autenticação necessária
-- Retorna todas as quadras de uma arena
+Possiveis erros:
+- `404` arena nao encontrada
 
 ---
 
 ### GET `/catalog/courts/{court_id}/schedules`
-Lista todos os horários disponíveis de uma quadra com informação de disponibilidade.
 
-**Autenticação:** Não requerida
+Lista horarios com disponibilidade.
 
-**Response:** `200 OK`
+Response (`list[dict]`):
+
 ```json
 [
   {
-    "id": 1,
-    "date": "2026-01-27",
-    "start_time": "10:00",
-    "end_time": "11:00",
-    "court_id": 1,
-    "available": true,
-    "court": {
-      "id": 1,
-      "name": "Quadra 1",
-      "arena_id": 1,
-      "sports_type": "Futebol",
-      "price_per_hour": 100.0
-    }
-  },
-  {
-    "id": 2,
-    "date": "2026-01-27",
-    "start_time": "11:00",
-    "end_time": "12:00",
-    "court_id": 1,
-    "available": false,
-    "court": {
-      "id": 1,
-      "name": "Quadra 1",
-      "arena_id": 1,
-      "sports_type": "Futebol",
-      "price_per_hour": 100.0
-    }
+    "id": "uuid",
+    "date": "2026-03-10",
+    "start_time": "09:00",
+    "end_time": "10:00",
+    "court_id": "uuid",
+    "is_available": true
   }
 ]
 ```
 
-**Erros:**
-- `404 Not Found` - Quadra não encontrada
+Possiveis erros:
+- `404` quadra nao encontrada
 
-**Notas:**
-- Endpoint público - sem autenticação necessária
-- `available` é `true` quando o horário está livre
-- `available` é `false` quando há uma reserva ativa para aquele horário
-- Útil para exibir disponibilidade de agendamento para clientes
+## 5. Schemas (definicoes)
 
----
+## 5.1 Auth/User
 
-## Códigos de Status HTTP
+### `Token`
 
-### Sucesso
-- `200 OK` - Requisição bem-sucedida
-- `201 Created` - Recurso criado com sucesso
-- `204 No Content` - Sucesso sem corpo de resposta (DELETE)
-
-### Erros do Cliente
-- `400 Bad Request` - Requisição inválida
-- `401 Unauthorized` - Autenticação necessária ou inválida
-- `403 Forbidden` - Sem permissão para acessar o recurso
-- `404 Not Found` - Recurso não encontrado
-- `409 Conflict` - Conflito (email/username duplicado, horário já existente)
-- `422 Unprocessable Entity` - Validação de dados falhou
-
-### Formato de Erro
 ```json
 {
-  "detail": "Mensagem de erro descritiva"
+  "access_token": "string",
+  "token_type": "string"
 }
 ```
 
----
+### `RequestUser`
 
-## Tipos e Enums
-
-### UserRole
-```typescript
-type UserRole = "admin" | "owner" | "client"
+```json
+{
+  "name": "string",
+  "email": "email",
+  "password": "string (min 6)"
+}
 ```
 
-- `admin` - Administrador do sistema
-- `owner` - Proprietário de arenas
-- `client` - Cliente que faz reservas
+### `UpdateUser`
 
-**Notas:**
-- Usuários começam como `client`
-- São promovidos automaticamente a `owner` ao criar primeira arena
-
-### ReservationStatus
-```typescript
-type ReservationStatus = "active" | "cancelled" | "finished" | "cancel_requested"
+```json
+{
+  "name": "string | null",
+  "email": "email | null"
+}
 ```
 
-- `active` - Reserva ativa
-- `cancelled` - Reserva cancelada
-- `finished` - Reserva finalizada
-- `cancel_requested` - Cancelamento solicitado (não utilizado atualmente)
+### `ResponseUser`
 
----
+```json
+{
+  "id": "uuid",
+  "email": "email",
+  "name": "string",
+  "role": "admin | owner | player"
+}
+```
 
-## Notas Gerais
+### `UserVerification`
 
-### Autenticação
-- Endpoints protegidos requerem header: `Authorization: Bearer {token}`
-- Token expira em 20 minutos
-- Token retornado no `/auth/login`
+```json
+{
+  "password": "string",
+  "new_password": "string (min 6)"
+}
+```
 
-### Normalização de Dados
-Os seguintes campos são automaticamente normalizados (trim):
-- `name`, `username`, `email` (user)
-- `name`, `city`, `address` (arena)
-- `name`, `sports_type` (court)
+### `ForgotPasswordRequest`
 
-### Validações Especiais
-- Username não pode conter espaços
-- Password deve ter no mínimo 6 caracteres
-- Email deve ser válido
-- Datas no formato ISO: `YYYY-MM-DD`
-- Horários no formato: `HH:MM`
+```json
+{
+  "email": "email"
+}
+```
 
-### Permissões
-- **Client**: Pode criar reservas, atualizar perfil
-- **Owner**: Pode gerenciar suas arenas, quadras e horários
-- **Admin**: (não documentado, desconsiderado por enquanto)
+### `ResetPasswordRequest`
 
-### Cascata de Deleção
-- Deletar arena → deleta quadras → deleta horários → deleta reservas
-- Deletar quadra → deleta horários → deleta reservas
-- Deletar horário → deleta reservas
+```json
+{
+  "token": "string",
+  "new_password": "string (min 6)"
+}
+```
+
+## 5.2 Arena
+
+### `RequestArena`
+
+```json
+{
+  "name": "string",
+  "description": "string | null",
+  "phone": "string",
+  "email": "string | null",
+  "city": "string",
+  "address": "string",
+  "state": "string",
+  "zip_code": "string",
+  "opening_time": "HH:MM:SS | null",
+  "closing_time": "HH:MM:SS | null"
+}
+```
+
+### `UpdateArena`
+
+Mesmo campos de `RequestArena`, todos opcionais.
+
+### `ResponseArena`
+
+```json
+{
+  "id": "uuid",
+  "owner_id": "uuid",
+  "name": "string",
+  "slug": "string | null",
+  "description": "string | null",
+  "phone": "string",
+  "email": "string | null",
+  "city": "string",
+  "address": "string",
+  "state": "string",
+  "zip_code": "string",
+  "opening_time": "HH:MM:SS | null",
+  "closing_time": "HH:MM:SS | null"
+}
+```
+
+## 5.3 Court
+
+### `RequestCourt`
+
+```json
+{
+  "arena_id": "uuid",
+  "name": "string",
+  "sport_type": "string",
+  "surface_type": "string | null",
+  "price_per_hour": 120.50
+}
+```
+
+### `UpdateCourt`
+
+Mesmo campos de `RequestCourt`, opcionais (exceto `arena_id` que nao esta no schema de update).
+
+### `ResponseCourt`
+
+```json
+{
+  "id": "uuid",
+  "slug": "string | null",
+  "name": "string",
+  "arena_id": "uuid",
+  "sport_type": "string",
+  "surface_type": "string",
+  "price_per_hour": 120.50
+}
+```
+
+## 5.4 Schedule
+
+### `RequestSchedule`
+
+```json
+{
+  "court_id": "uuid",
+  "date": "YYYY-MM-DD",
+  "start_time": "HH:MM",
+  "end_time": "HH:MM"
+}
+```
+
+### `RequestScheduleBatch`
+
+```json
+{
+  "court_id": "uuid",
+  "start_date": "YYYY-MM-DD",
+  "end_date": "YYYY-MM-DD",
+  "start_time": "HH:MM",
+  "end_time": "HH:MM",
+  "interval_minutes": 60,
+  "weekdays": [0, 1, 2, 3, 4]
+}
+```
+
+### `UpdateSchedule`
+
+```json
+{
+  "date": "YYYY-MM-DD | null",
+  "start_time": "HH:MM | null",
+  "end_time": "HH:MM | null"
+}
+```
+
+### `ResponseSchedule`
+
+```json
+{
+  "id": "uuid",
+  "court_id": "uuid",
+  "date": "YYYY-MM-DD",
+  "start_time": "HH:MM",
+  "end_time": "HH:MM",
+  "court": {
+    "id": "uuid",
+    "slug": "string | null",
+    "name": "string",
+    "arena_id": "uuid",
+    "sport_type": "string",
+    "surface_type": "string",
+    "price_per_hour": 120.50
+  }
+}
+```
+
+## 5.5 Reservation
+
+### `RequestReservation`
+
+```json
+{
+  "schedule_id": "uuid"
+}
+```
+
+### `UpdateReservation`
+
+```json
+{
+  "status": "pending | confirmed | cancelled | expired | completed | no_show"
+}
+```
+
+### `ResponseReservation`
+
+```json
+{
+  "id": "uuid",
+  "schedule_id": "uuid",
+  "user_id": "uuid",
+  "status": "confirmed",
+  "schedule": {
+    "id": "uuid",
+    "court_id": "uuid",
+    "date": "YYYY-MM-DD",
+    "start_time": "HH:MM",
+    "end_time": "HH:MM",
+    "court": {
+      "id": "uuid",
+      "slug": "string | null",
+      "name": "string",
+      "arena_id": "uuid",
+      "sport_type": "string",
+      "surface_type": "string",
+      "price_per_hour": 120.50
+    }
+  }
+}
+```
+
+### `ResponseOwnerReservation`
+
+```json
+{
+  "id": "uuid",
+  "status": "confirmed | cancelled | ...",
+  "created_at": "datetime | null",
+  "cancelled_at": "datetime | null",
+  "schedule": {
+    "id": "uuid",
+    "date": "YYYY-MM-DD",
+    "start_time": "HH:MM",
+    "end_time": "HH:MM"
+  },
+  "court": {
+    "id": "uuid",
+    "name": "string"
+  },
+  "arena": {
+    "id": "uuid",
+    "name": "string"
+  },
+  "client": {
+    "id": "uuid",
+    "name": "string",
+    "email": "string"
+  }
+}
+```
+
+## 6. Enums
+
+### `UserRole`
+- `admin`
+- `owner`
+- `player`
+
+### `ReservationStatus`
+- `pending`
+- `confirmed`
+- `cancelled`
+- `expired`
+- `completed`
+- `no_show`
+
+### `ReservationPaymentStatus`
+- `pending`
+- `paid`
+- `failed`
+- `refunded`
+
+### `PaymentMethod`
+- `cash`
+- `pix`
+- `credit_card`
+- `debit_card`
+
+### `PaymentStatus`
+- `pending`
+- `paid`
+- `refunded`
+- `failed`
+- `cancelled`
+
+### `MatchStatus`
+- `scheduled`
+- `confirmed`
+- `in_progress`
+- `finished`
+- `cancelled`
+
+### `MatchVisibility`
+- `public`
+- `private`
+- `friends`
+
+### `SkillLevel`
+- `beginner`
+- `intermediate`
+- `advanced`
+- `professional`
+
+## 7. Eventos publicados (RabbitMQ)
+
+Todos enviados como envelope:
+
+```json
+{
+  "type": "<message_type>",
+  "data": { }
+}
+```
+
+### 7.1 `verification`
+Disparado em `POST /auth/register`.
+
+Payload:
+
+```json
+{
+  "email": "user@dominio.com",
+  "token": "email-verification-token"
+}
+```
+
+### 7.2 `password_reset`
+Disparado em `POST /auth/forgot-password` (quando e-mail existe).
+
+Payload:
+
+```json
+{
+  "email": "usuario@dominio.com",
+  "token": "token-de-reset"
+}
+```
+
+### 7.3 `owner_promotion`
+Disparado ao criar arena para usuario `player`.
+
+### 7.4 `new_court`
+Disparado ao criar quadra.
+
+### 7.5 `reservation_created`
+Disparado ao criar reserva (recipient owner/client).
+
+### 7.6 `reservation_cancelled`
+Disparado ao cancelar reserva (recipient owner/client).
+
+## 8. Matriz rapida de status HTTP
+
+- `200` sucesso
+- `201` criado
+- `204` sem conteudo (cancelamento de reserva)
+- `400` dados invalidos / regra de negocio
+- `401` nao autorizado (token/credenciais)
+- `403` proibido (sem permissao)
+- `404` recurso nao encontrado
+- `409` conflito (duplicidade/conflito de horario)
+- `500` erro interno
+
+## 9. Observacoes importantes do estado atual do codigo
+
+- `GET /auth/verify-email`, `GET /auth/reset-password` e `POST /auth/reset-password-form` retornam HTML, nao JSON.
+- `GET /reservations/` esta sem autenticacao no codigo atual.
+- Existe resposta de erro SQL com campo `fiels` (typo) no payload.
+- Os textos de erro/sucesso estao documentados conforme strings atuais do codigo.

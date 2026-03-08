@@ -1,6 +1,6 @@
 from app.core.database import Base
 
-from sqlalchemy import Column, Enum, String, Boolean
+from sqlalchemy import Column, Enum, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 
 from app.shared.enums.user import UserRole
@@ -16,6 +16,11 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, ActiveMixin):
 
     is_email_verified = Column(Boolean, default=False)
     email_verification_token = Column(String, nullable=True)
+    reset_password_token = Column(String, nullable=True)
+    reset_password_token_expires_at = Column(
+        DateTime(timezone=True),
+        nullable=True
+    )
 
     role = Column(
         Enum(UserRole, name="user_role")

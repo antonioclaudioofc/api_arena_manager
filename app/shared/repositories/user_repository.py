@@ -22,6 +22,9 @@ class UserRepository:
     def get_by_email_verification_token(self, token):
         return self.db.query(User).filter(User.email_verification_token == token).first()
 
+    def get_by_reset_password_token(self, token):
+        return self.db.query(User).filter(User.reset_password_token == token).first()
+
     def update(self, user):
         self.db.commit()
         self.db.refresh(user)

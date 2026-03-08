@@ -3,7 +3,12 @@ from app.messaging.producer import producer
 from app.shared.enums.user import UserRole
 from app.shared.exceptions import EmailAlreadyExistsException, UnathorizedException
 from app.models.user import User
-from app.core.security import bcrypt_context, generate_email_verification_token, hash_password
+from app.core.security import (
+    bcrypt_context,
+    generate_email_verification_token,
+    generate_password_reset_token,
+    hash_password
+)
 from datetime import datetime, timedelta, timezone
 
 
@@ -11,6 +16,16 @@ class AuthService:
 
     def __init__(self, user_repo):
         self.user_repo = user_repo
+
+    @staticmethod
+    def _to_utc(dt):
+        if dt is None:
+            return None
+
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+
+        return dt.astimezone(timezone.utc)
 
     def authenticate(
         self,
@@ -73,7 +88,6 @@ class AuthService:
         user_model = User(
             **data.model_dump(exclude={"password"}),
             hashed_password=hash_password(data.password),
-            created_at=datetime.now(timezone.utc),
             role=UserRole.PLAYER,
             is_email_verified=False,
             email_verification_token=token
@@ -87,3 +101,44 @@ class AuthService:
         })
 
         return user
+
+    def forgot_password(self, email):
+        user = self.user_repo.get_by_email(email)
+
+        if not user:
+            return
+
+        token = generate_password_reset_token()
+
+        user.reset_password_token = token
+        user.reset_password_token_expires_at = datetime.now(
+            timezone.utc) + timedelta(hours=1)
+
+        self.user_repo.update(user)
+
+        producer.publish_message('password_reset', {
+            'email': user.email,
+            'token': token
+        })
+
+    def validate_password_reset_token(self, token):
+        user = self.user_repo.get_by_reset_password_token(token)
+
+        if not user:
+            raise UnathorizedException("Token inválido")
+
+        expires_at = self._to_utc(user.reset_password_token_expires_at)
+
+        if not expires_at or expires_at < datetime.now(timezone.utc):
+            raise UnathorizedException("Token expirado")
+
+        return user
+
+    def reset_password(self, token, new_password):
+        user = self.validate_password_reset_token(token)
+
+        user.hashed_password = hash_password(new_password)
+        user.reset_password_token = None
+        user.reset_password_token_expires_at = None
+
+        self.user_repo.update(user)

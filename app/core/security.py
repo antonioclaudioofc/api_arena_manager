@@ -10,3 +10,7 @@ def hash_password(password: str):
 
 def generate_email_verification_token():
     return secrets.token_urlsafe(32)
+
+
+def generate_password_reset_token():
+    return secrets.token_urlsafe(32)
