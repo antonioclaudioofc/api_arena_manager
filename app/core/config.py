@@ -6,15 +6,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str
     DATABASE_TEST_URL: str
-    EMAIL_API_URL: str
-    RABBITMQ_URL: str
-    RABBITMQ_ARENA_MANAGER_QUEUE: str
-    RABBITMQ_ARENA_MANAGER_EXCHANGE: str
-    RABBITMQ_ARENA_MANAGER_ROUTING_KEY: str
-
+    NOTIFY_API_URL: str
+    NOTIFY_API_KEY: str
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()

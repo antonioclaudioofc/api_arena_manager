@@ -1,59 +1,33 @@
-import pika
-import json
+import httpx
 from fastapi.encoders import jsonable_encoder
 from app.core.config import settings
 
 
+ROUTE_MAP = {
+    "verification": "/api/arena-manager/verification",
+    "password_reset": "/api/arena-manager/password-reset",
+    "owner_promotion": "/api/arena-manager/owner-promotion",
+    "new_court": "/api/arena-manager/new-court",
+    "reservation_created": "/api/arena-manager/reservation-created",
+    "reservation_cancelled": "/api/arena-manager/reservation-cancelled",
+}
+
+
 class ArenaManagerProducer:
-    def __init__(self):
-        self.connection = None
-        self.channel = None
-
-    def connect(self):
-        if not self.connection or self.connection.is_closed:
-            self.connection = pika.BlockingConnection(
-                pika.URLParameters(settings.RABBITMQ_URL)
-            )
-
-            self.channel = self.connection.channel()
-
-            self.channel.exchange_declare(
-                exchange=settings.RABBITMQ_ARENA_MANAGER_EXCHANGE,
-                exchange_type='direct',
-                durable=True
-            )
-
-            self.channel.queue_declare(
-                queue=settings.RABBITMQ_ARENA_MANAGER_QUEUE,
-                durable=True
-            )
-
-            self.channel.queue_bind(
-                queue=settings.RABBITMQ_ARENA_MANAGER_QUEUE,
-                exchange=settings.RABBITMQ_ARENA_MANAGER_EXCHANGE,
-                routing_key=settings.RABBITMQ_ARENA_MANAGER_ROUTING_KEY
-            )
 
     def publish_message(self, message_type: str, data: dict):
-        self.connect()
+        path = ROUTE_MAP.get(message_type)
+        if not path:
+            raise ValueError(f"Unknown message type: {message_type}")
 
-        message = {
-            "type": message_type,
-            "data": data
-        }
+        url = f"{settings.NOTIFY_API_URL}{path}"
 
-        self.channel.basic_publish(
-            exchange=settings.RABBITMQ_ARENA_MANAGER_EXCHANGE,
-            routing_key=settings.RABBITMQ_ARENA_MANAGER_ROUTING_KEY,
-            body=json.dumps(jsonable_encoder(message)),
-            properties=pika.BasicProperties(
-                delivery_mode=2,
-            )
+        httpx.post(
+            url,
+            json=jsonable_encoder(data),
+            headers={"X-API-Key": settings.NOTIFY_API_KEY},
+            timeout=10,
         )
-
-    def close(self):
-        if self.connection and not self.connection.is_closed:
-            self.connection.close()
 
 
 producer = ArenaManagerProducer()

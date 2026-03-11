@@ -8,3 +8,5 @@ __pycache__
 database.db
 database_*.db
 venv/
+
+API_DOCUMENTATION.md

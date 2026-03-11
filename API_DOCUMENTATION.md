@@ -1182,19 +1182,17 @@ Mesmo campos de `RequestCourt`, opcionais (exceto `arena_id` que nao esta no sch
 - `advanced`
 - `professional`
 
-## 7. Eventos publicados (RabbitMQ)
+## 7. Notificações (Notify Me API)
 
-Todos enviados como envelope:
+Notificações são enviadas via HTTP POST para a Notify Me API.
 
-```json
-{
-  "type": "<message_type>",
-  "data": { }
-}
-```
+**Variáveis de ambiente:**
+- `NOTIFY_API_URL` — URL base da API (ex: `https://notify-me.vercel.app`)
+- `NOTIFY_API_KEY` — Chave de autenticação (header `X-API-Key`)
 
 ### 7.1 `verification`
 Disparado em `POST /auth/register`.
+→ `POST /api/arena-manager/verification`
 
 Payload:
 
@@ -1207,6 +1205,7 @@ Payload:
 
 ### 7.2 `password_reset`
 Disparado em `POST /auth/forgot-password` (quando e-mail existe).
+→ `POST /api/arena-manager/password-reset`
 
 Payload:
 
@@ -1219,15 +1218,19 @@ Payload:
 
 ### 7.3 `owner_promotion`
 Disparado ao criar arena para usuario `player`.
+→ `POST /api/arena-manager/owner-promotion`
 
 ### 7.4 `new_court`
 Disparado ao criar quadra.
+→ `POST /api/arena-manager/new-court`
 
 ### 7.5 `reservation_created`
 Disparado ao criar reserva (recipient owner/client).
+→ `POST /api/arena-manager/reservation-created`
 
 ### 7.6 `reservation_cancelled`
 Disparado ao cancelar reserva (recipient owner/client).
+→ `POST /api/arena-manager/reservation-cancelled`
 
 ## 8. Matriz rapida de status HTTP
 
